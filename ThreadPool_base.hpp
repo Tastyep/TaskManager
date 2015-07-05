@@ -29,37 +29,37 @@ public:
     std::pair<bool, std::string>
     start() {
       if (status.load(std::memory_order_seq_cst) != state::STOP) {
-          return std::make_pair(false, std::string("ThreadPool has already been started"));
+          return std::make_pair(false, "ThreadPool has already been started");
       }
 
       status.store(state::PAUSE, std::memory_order_seq_cst);      // to synchronize threads
       for (unsigned int i = 0; i < this->nbThread; ++i) startThread();
       status.store(state::PLAY, std::memory_order_seq_cst);       // we can now exectue tasks
-      return std::make_pair(true, std::string(""));
+      return std::make_pair(true, "");
     };
 
     std::pair<bool, std::string> pause() {
       if (status.load(std::memory_order_seq_cst) != state::START) {
-          return std::make_pair(false, std::string("ThreadPool is not started"));
+          return std::make_pair(false, "ThreadPool is not started");
       }
       status.store(state::PAUSE, std::memory_order_acquire);
-      return std::make_pair(true, std::string(""));
+      return std::make_pair(true, "");
     };
 
     std::pair<bool, std::string> unpause() {
       if (status.load(std::memory_order_seq_cst) != state::PAUSE) {
-          return std::make_pair(false, std::string("ThreadPool is not paused"));
+          return std::make_pair(false, "ThreadPool is not paused");
       }
       status.store(state::PLAY, std::memory_order_acquire);
-      return std::make_pair(true, std::string(""));
+      return std::make_pair(true, "");
     }
     std::pair<bool, std::string>
     stop() {
       if (status.load(std::memory_order_seq_cst) == state::STOP) {
-          return std::make_pair(false, std::string("ThreadPool is already stopped"));
+          return std::make_pair(false, "ThreadPool is already stopped");
       }
       status.store(state::STOP, std::memory_order_acquire);
-      return std::make_pair(true, std::string(""));
+      return std::make_pair(true, "");
     };
 
     void
