@@ -2,11 +2,8 @@
 #define THREADPOOL_BASE_HPP_
 
 #include <queue>
-#include <mutex>
-#include <thread>
-#include <atomic>
-#include <utility>
-#include <string>
+
+#include "ThreadManager.hh"
 
 template<typename T,
 template <typename, typename = std::allocator<T>> class Container = std::queue>
@@ -69,6 +66,8 @@ public:
 
     virtual void
     threadFunction() = 0;
+
+
 
 protected:
     Container<T>  taskContainer;
