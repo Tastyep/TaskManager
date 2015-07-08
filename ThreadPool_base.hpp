@@ -2,11 +2,12 @@
 #define THREADPOOL_BASE_HPP_
 
 #include <queue>
+#include <stdexcept>
+#include <future>
 
 #include "ThreadManager.hh"
 
-template<typename T,
-template <typename, typename = std::allocator<T>> class Container = std::queue>
+template<class T>
 class ThreadPool_base {
 public:
     enum class state {
@@ -15,7 +16,14 @@ public:
       START
     };
 public:
-    ThreadPool_base(unsigned int nbThreads) : nbThreads(nbThreads) {};
+    ThreadPool_base(unsigned int nbThreads,
+                    ThreadManager& manager) :
+  maxParallelism(nbThreads)
+  , manager(manager) {
+      if (nbThreads == 0)
+        throw std::out_of_range("The ThreadPool must have at least a thread");
+    };
+
     virtual ~ThreadPool_base() {
       if (status.load(std::memory_order_seq_cst) != state::STOP) {
         this->stop();
@@ -30,7 +38,8 @@ public:
       }
 
       status.store(state::PAUSE, std::memory_order_seq_cst);      // to synchronize threads
-      for (unsigned int i = 0; i < this->nbThread; ++i) startThread();
+      for (unsigned int i = 0; i < this->nbThread; ++i)
+        this->startTask();
       status.store(state::PLAY, std::memory_order_seq_cst);       // we can now exectue tasks
       return std::make_pair(true, "");
     };
@@ -59,23 +68,67 @@ public:
       return std::make_pair(true, "");
     };
 
-    void
-    startThread() {
-      // threads.emplace_back(threadFunction);
+public:
+  template<class F, class... Args>
+  auto addTask(F&& function, Args&&... args)
+      -> std::future<typename std::result_of<F(Args...)>::type> {
+      using return_type = typename std::result_of<F(Args...)>::type;
+
+      if (status.load(std::memory_order_release) == state::STOP)
+        throw std::runtime_error("Can't add task on stopped ThreadPool");
+
+      auto task = std::make_shared<std::packaged_task<return_type()> >
+              (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+      std::future<return_type> futureResult = task->get_future();
+
+      {
+        std::lock_guard<std::mutex> guard(this->taskMutex);
+        taskContainer.emplace([this, task]() {
+          (*task)();
+          {
+            std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+            --(this->threadRefCount);
+          }
+          this->startTask();
+        });
+      }
+    bool startCondition;
+    {
+      std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+      startCondition = this->threadRefCount < this->maxParallelism;
     }
+    if (startCondition) {
+      this->startTask();
+    }
+    return futureResult;
+  }
 
-    virtual void
-    threadFunction() = 0;
+private:
+  void
+  startTask() {
+    std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+    std::lock_guard<std::mutex> guardTask(this->taskMutex);
+    std::function<void ()> task;
 
-
+    if (this->taskContainer.empty()
+    || this->threadRefCount >= this->maxParallelism) // Handle later or already handled
+      return ;
+    task = std::move(this->taskContainer.front());
+    this->taskContainer.pop();
+  }
 
 protected:
-    Container<T>  taskContainer;
+    std::queue<T> taskContainer;
     std::mutex    taskMutex;
+
+    unsigned int  threadRefCount;
+    std::mutex    refCountMutex;
+
+    ThreadManager& manager;
 
 private:
     std::atomic_bool 	status;
-    unsigned int      nbThreads;
+    unsigned int      maxParallelism;
 };
 
 #endif /* end of include guard: THREADPOOL_BASE_HPP_ */
