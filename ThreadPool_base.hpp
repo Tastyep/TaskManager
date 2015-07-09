@@ -37,10 +37,7 @@ public:
           return std::make_pair(false, "ThreadPool has already been started");
       }
 
-      status.store(state::PAUSE, std::memory_order_seq_cst);      // to synchronize threads
-      for (unsigned int i = 0; i < this->nbThread; ++i)
-        this->startTask();
-      status.store(state::PLAY, std::memory_order_seq_cst);       // we can now exectue tasks
+      status.store(state::START, std::memory_order_seq_cst);       // we can now exectue tasks
       return std::make_pair(true, "");
     };
 
@@ -56,7 +53,7 @@ public:
       if (status.load(std::memory_order_seq_cst) != state::PAUSE) {
           return std::make_pair(false, "ThreadPool is not paused");
       }
-      status.store(state::PLAY, std::memory_order_acquire);
+      status.store(state::START, std::memory_order_acquire);
       return std::make_pair(true, "");
     }
     std::pair<bool, std::string>
@@ -127,7 +124,7 @@ protected:
     ThreadManager& manager;
 
 private:
-    std::atomic_bool 	status;
+    std::atomic<state> 	status;
     unsigned int      maxParallelism;
 };
 
