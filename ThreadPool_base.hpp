@@ -19,13 +19,14 @@ public:
     ThreadPool_base(unsigned int nbThreads,
                     ThreadManager& manager) :
   maxParallelism(nbThreads)
-  , manager(manager) {
+  , manager(manager)
+  , status(state::STOP) {
       if (nbThreads == 0)
         throw std::out_of_range("The ThreadPool must have at least a thread");
     };
 
     virtual ~ThreadPool_base() {
-      if (status.load(std::memory_order_seq_cst) != state::STOP) {
+      if (this->status.load(std::memory_order_seq_cst) != state::STOP) {
         this->stop();
       }
     };
@@ -33,38 +34,38 @@ public:
 public:
     std::pair<bool, std::string>
     start() {
-      if (status.load(std::memory_order_seq_cst) != state::STOP) {
+      if (this->status.load(std::memory_order_seq_cst) != state::STOP) {
           return std::make_pair(false, "ThreadPool has already been started");
       }
 
-      status.store(state::PAUSE, std::memory_order_seq_cst);      // to synchronize threads
+      this->status.store(state::PAUSE, std::memory_order_seq_cst);      // to synchronize threads
       for (unsigned int i = 0; i < this->nbThread; ++i)
         this->startTask();
-      status.store(state::PLAY, std::memory_order_seq_cst);       // we can now exectue tasks
+      this->status.store(state::PLAY, std::memory_order_seq_cst);       // we can now exectue tasks
       return std::make_pair(true, "");
     };
 
     std::pair<bool, std::string> pause() {
-      if (status.load(std::memory_order_seq_cst) != state::START) {
+      if (this->status.load(std::memory_order_seq_cst) != state::START) {
           return std::make_pair(false, "ThreadPool is not started");
       }
-      status.store(state::PAUSE, std::memory_order_acquire);
+      this->status.store(state::PAUSE, std::memory_order_acquire);
       return std::make_pair(true, "");
     };
 
     std::pair<bool, std::string> unpause() {
-      if (status.load(std::memory_order_seq_cst) != state::PAUSE) {
+      if (this->status.load(std::memory_order_seq_cst) != state::PAUSE) {
           return std::make_pair(false, "ThreadPool is not paused");
       }
-      status.store(state::PLAY, std::memory_order_acquire);
+      this->status.store(state::PLAY, std::memory_order_acquire);
       return std::make_pair(true, "");
     }
     std::pair<bool, std::string>
     stop() {
-      if (status.load(std::memory_order_seq_cst) == state::STOP) {
+      if (this->status.load(std::memory_order_seq_cst) == state::STOP) {
           return std::make_pair(false, "ThreadPool is already stopped");
       }
-      status.store(state::STOP, std::memory_order_acquire);
+      this->status.store(state::STOP, std::memory_order_acquire);
       return std::make_pair(true, "");
     };
 
@@ -74,7 +75,7 @@ public:
       -> std::future<typename std::result_of<F(Args...)>::type> {
       using return_type = typename std::result_of<F(Args...)>::type;
 
-      if (status.load(std::memory_order_release) == state::STOP)
+      if (this->status.load(std::memory_order_release) == state::STOP)
         throw std::runtime_error("Can't add task on stopped ThreadPool");
 
       auto task = std::make_shared<std::packaged_task<return_type()> >
