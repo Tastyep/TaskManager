@@ -98,13 +98,13 @@ public:
     if (this->status.load(std::memory_order_release) == state::STOP)
       throw std::runtime_error("Can't add task on stopped ThreadPool");
 
-    task.addCallbackAfter([this]() {
+    task >> [this]() {
       {
         std::lock_guard<std::mutex> guardRef(this->refCountMutex);
         --(this->threadRefCount);
       }
       this->startTask();
-    });
+    };
     {
       std::lock_guard<std::mutex> guard(this->taskMutex);
       taskContainer.push(task);

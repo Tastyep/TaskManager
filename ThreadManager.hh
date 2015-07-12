@@ -57,7 +57,7 @@ public:
   }
 
   void
-  setTask(const Task& task) {
+  setTask(const std::function<void ()>& task) {
     std::lock_guard<std::mutex> guard(this->mutex);
     this->task = task;
   }
@@ -69,7 +69,7 @@ public:
   }
 
 private:
-  Task task;
+  Task   task;
   std::thread thread;
   std::mutex  mutex;
   bool running;
