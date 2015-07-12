@@ -18,9 +18,10 @@ public:
 public:
     ThreadPool_base(unsigned int nbThreads,
                     ThreadManager& manager) :
-  maxParallelism(nbThreads)
+  threadRefCount(0)
   , manager(manager)
-  , status(state::STOP) {
+  , status(state::STOP)
+  , maxParallelism(nbThreads) {
       if (nbThreads == 0)
         throw std::out_of_range("The ThreadPool must have at least a thread");
     };
@@ -38,14 +39,7 @@ public:
           return std::make_pair(false, "ThreadPool has already been started");
       }
 
-<<<<<<< HEAD
-      this->status.store(state::PAUSE, std::memory_order_seq_cst);      // to synchronize threads
-      for (unsigned int i = 0; i < this->nbThread; ++i)
-        this->startTask();
-      this->status.store(state::PLAY, std::memory_order_seq_cst);       // we can now exectue tasks
-=======
       status.store(state::START, std::memory_order_seq_cst);       // we can now exectue tasks
->>>>>>> 2de02cbf7fb33a0f7a8881edc5534fbb3fb33f2a
       return std::make_pair(true, "");
     };
 
@@ -61,11 +55,7 @@ public:
       if (this->status.load(std::memory_order_seq_cst) != state::PAUSE) {
           return std::make_pair(false, "ThreadPool is not paused");
       }
-<<<<<<< HEAD
-      this->status.store(state::PLAY, std::memory_order_acquire);
-=======
       status.store(state::START, std::memory_order_acquire);
->>>>>>> 2de02cbf7fb33a0f7a8881edc5534fbb3fb33f2a
       return std::make_pair(true, "");
     }
     std::pair<bool, std::string>
@@ -122,8 +112,10 @@ private:
     if (this->taskContainer.empty()
     || this->threadRefCount >= this->maxParallelism) // Handle later or already handled
       return ;
+    ++this->threadRefCount;
     task = std::move(this->taskContainer.front());
     this->taskContainer.pop();
+    manager.runTask(task);
   }
 
 protected:

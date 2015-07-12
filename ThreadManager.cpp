@@ -1,4 +1,6 @@
 #include "ThreadManager.hh"
+#include <iostream>
+#include <chrono>
 
 ThreadManager::ThreadManager(unsigned int nbThread) : running(true)
 {
@@ -10,14 +12,9 @@ ThreadManager::ThreadManager(unsigned int nbThread) : running(true)
 ThreadManager::~ThreadManager() {
   if (this->running)
     this->stop();
-  this->cv.notify_all();
   {
     std::lock_guard<std::mutex> guard(this->workersMutex);
-
-    for (auto& worker : this->workers) {
-      if (worker.thread.joinable())
-        worker.thread.join();
-    }
+    workers.clear();
   }
 }
 
@@ -25,21 +22,8 @@ void
 ThreadManager::addNewThread() {
   std::lock_guard<std::mutex> guard(this->workersMutex);
 
-  this->workers.emplace_back([this](Worker *worker) {
-    while (this->running) {
-      {
-        std::unique_lock<std::mutex> lock(this->condvarMutex);
-        do {
-          this->cv.wait(lock, [this, worker] {
-            return (not this->running || worker->task != nullptr);
-          });
-        } while (this->running && worker->task == nullptr);
-        if (not this->running)
-          return ;
-      }
-      //do some stuff
-    }
-  });
+  this->workers.emplace_back(new Worker);
+  this->workers.back()->start(this->cv, this->condvarMutex);
 }
 
 unsigned int
@@ -64,8 +48,9 @@ ThreadManager::runTask(const std::function<void ()>& task) {
     std::lock_guard<std::mutex> guard(this->workersMutex);
 
     for (auto& worker : this->workers) {
-      if (worker.task == nullptr) {
-        worker.task = task;
+      if (worker->isIdle()) {
+        worker->setTask(task);
+        this->cv.notify_all();
         return ;
       }
     }
@@ -83,9 +68,14 @@ ThreadManager::runTask(const std::function<void ()>& task) {
 
 std::pair<bool, std::string>
 ThreadManager::stop() {
+  std::lock_guard<std::mutex> guard(this->workersMutex);
+
   if (this->running == false) {
-      return std::make_pair(false, "ThreadManager is already stopped");
+    return std::make_pair(false, "ThreadManager is already stopped");
   }
   this->running = false;
+  for (auto& worker : this->workers)
+    worker->stop();
+  this->cv.notify_all();
   return std::make_pair(true, "");
 };
