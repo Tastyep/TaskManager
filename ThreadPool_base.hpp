@@ -3,11 +3,9 @@
 
 #include <queue>
 #include <stdexcept>
-#include <future>
 
 #include "ThreadManager.hh"
 
-template<class T>
 class ThreadPool_base {
 public:
     enum class state {
@@ -83,17 +81,35 @@ public:
 
     {
       std::lock_guard<std::mutex> guard(this->taskMutex);
-      taskContainer.emplace([this, task]() {
+      taskContainer.emplace(Task([this, task]() {
         (*task)();
         {
           std::lock_guard<std::mutex> guardRef(this->refCountMutex);
           --(this->threadRefCount);
         }
         this->startTask();
-      });
+      }));
     }
     this->startTask();
     return futureResult;
+  }
+
+  void addTask(Task& task) {
+    if (this->status.load(std::memory_order_release) == state::STOP)
+      throw std::runtime_error("Can't add task on stopped ThreadPool");
+
+    task.addCallbackAfter([this]() {
+      {
+        std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+        --(this->threadRefCount);
+      }
+      this->startTask();
+    });
+    {
+      std::lock_guard<std::mutex> guard(this->taskMutex);
+      taskContainer.push(task);
+    }
+    this->startTask();
   }
 
 private:
@@ -101,7 +117,7 @@ private:
   startTask() {
     std::lock_guard<std::mutex> guardRef(this->refCountMutex);
     std::lock_guard<std::mutex> guardTask(this->taskMutex);
-    std::function<void ()> task;
+    Task task;
 
     if (this->taskContainer.empty()
     || this->threadRefCount >= this->maxParallelism
@@ -114,8 +130,8 @@ private:
   }
 
 protected:
-    std::queue<T> taskContainer;
-    std::mutex    taskMutex;
+    std::queue<Task> taskContainer;
+    std::mutex       taskMutex;
 
     unsigned int  threadRefCount;
     std::mutex    refCountMutex;

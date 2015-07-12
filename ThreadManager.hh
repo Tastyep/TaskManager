@@ -2,8 +2,6 @@
 #define THREADMANAGER_HH_
 
 #include <atomic>
-#include <functional>
-#include <mutex>
 #include <thread>
 #include <atomic>
 #include <memory>
@@ -12,12 +10,13 @@
 #include <utility>
 #include <string>
 #include <iostream>
+#include "Task.hpp"
 
 class Worker {
 public:
   Worker() :
   thread()
-  , task(nullptr)
+  , task()
   , running(false) {
   }
 
@@ -58,7 +57,7 @@ public:
   }
 
   void
-  setTask(const std::function<void ()>& task) {
+  setTask(const Task& task) {
     std::lock_guard<std::mutex> guard(this->mutex);
     this->task = task;
   }
@@ -69,10 +68,8 @@ public:
     return (this->task == nullptr);
   }
 
-public:
-    std::function<void ()> task;
-
 private:
+  Task task;
   std::thread thread;
   std::mutex  mutex;
   bool running;
@@ -84,7 +81,7 @@ public:
   ~ThreadManager();
 
   std::pair<bool, std::string> stop();
-  void runTask(const std::function<void ()>& task);
+  void runTask(const Task& task);
 
 private:
   unsigned int roundToNextPower(unsigned int nbThread) const;
