@@ -10,7 +10,7 @@ ThreadManager::ThreadManager(unsigned int nbThread) : running(true)
 }
 
 ThreadManager::~ThreadManager() {
-  if (this->running)
+  if (this->running.load())
     this->stop();
   {
     std::lock_guard<std::mutex> guard(this->workersMutex);
@@ -42,7 +42,7 @@ ThreadManager::runTask(const std::function<void ()>& task) {
   unsigned int maxThreads;
   unsigned int nbWorkers;
 
-  if (not this->running)
+  if (not this->running.load())
     return ;
   {
     std::lock_guard<std::mutex> guard(this->workersMutex);
@@ -70,10 +70,10 @@ std::pair<bool, std::string>
 ThreadManager::stop() {
   std::lock_guard<std::mutex> guard(this->workersMutex);
 
-  if (this->running == false) {
+  if (this->running.load() == false) {
     return std::make_pair(false, "ThreadManager is already stopped");
   }
-  this->running = false;
+  this->running.store(false);
   for (auto& worker : this->workers)
     worker->stop();
   this->cv.notify_all();

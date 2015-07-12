@@ -49,9 +49,9 @@ public:
         cv.wait(lock, [this] {
           return (not this->running || this->task != nullptr);
         });
+        if (not this->running)
+          return ;
       }
-      if (not this->running)
-        return ;
       this->task();
       this->setTask(nullptr);
     }
@@ -64,7 +64,8 @@ public:
   }
 
   bool
-  isIdle() const {
+  isIdle() {
+    std::lock_guard<std::mutex> guard(this->mutex);
     return (this->task == nullptr);
   }
 
@@ -73,7 +74,7 @@ public:
 
 private:
   std::thread thread;
-  std::mutex mutex;
+  std::mutex  mutex;
   bool running;
 };
 
@@ -96,7 +97,7 @@ private:
   mutable std::condition_variable cv;
   mutable std::mutex condvarMutex;
 
-  bool running;
+  std::atomic_bool running;
 };
 
 #endif /* end of include guard: THREADMANAGER_HH_ */
