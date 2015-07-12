@@ -38,7 +38,7 @@ ThreadManager::roundToNextPower(unsigned int nbThread) const {
 }
 
 void
-ThreadManager::runTask(const std::function<void ()>& task) {
+ThreadManager::runTask(const Task& task) {
   unsigned int maxThreads;
   unsigned int nbWorkers;
 
