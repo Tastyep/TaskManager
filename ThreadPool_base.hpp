@@ -23,7 +23,7 @@ public:
   , status(state::STOP)
   , maxParallelism(nbThreads) {
       if (nbThreads == 0)
-        throw std::out_of_range("The ThreadPool must have at least a thread");
+        throw std::invalid_argument("The ThreadPool must have at least a thread");
     };
 
     virtual ~ThreadPool_base() {
@@ -56,6 +56,7 @@ public:
           return std::make_pair(false, "ThreadPool is not paused");
       }
       status.store(state::START, std::memory_order_acquire);
+      this->startTask();
       return std::make_pair(true, "");
     }
     std::pair<bool, std::string>
@@ -70,35 +71,28 @@ public:
 public:
   template<class F, class... Args>
   auto addTask(F&& function, Args&&... args)
-      -> std::future<typename std::result_of<F(Args...)>::type> {
-      using return_type = typename std::result_of<F(Args...)>::type;
+    -> std::future<typename std::result_of<F(Args...)>::type> {
+    using return_type = typename std::result_of<F(Args...)>::type;
 
-      if (this->status.load(std::memory_order_release) == state::STOP)
-        throw std::runtime_error("Can't add task on stopped ThreadPool");
+    if (this->status.load(std::memory_order_release) == state::STOP)
+      throw std::runtime_error("Can't add task on stopped ThreadPool");
 
-      auto task = std::make_shared<std::packaged_task<return_type()> >
-              (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
-      std::future<return_type> futureResult = task->get_future();
+    auto task = std::make_shared<std::packaged_task<return_type()> >
+            (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+    std::future<return_type> futureResult = task->get_future();
 
-      {
-        std::lock_guard<std::mutex> guard(this->taskMutex);
-        taskContainer.emplace([this, task]() {
-          (*task)();
-          {
-            std::lock_guard<std::mutex> guardRef(this->refCountMutex);
-            --(this->threadRefCount);
-          }
-          this->startTask();
-        });
-      }
-    bool startCondition;
     {
-      std::lock_guard<std::mutex> guardRef(this->refCountMutex);
-      startCondition = this->threadRefCount < this->maxParallelism;
+      std::lock_guard<std::mutex> guard(this->taskMutex);
+      taskContainer.emplace([this, task]() {
+        (*task)();
+        {
+          std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+          --(this->threadRefCount);
+        }
+        this->startTask();
+      });
     }
-    if (startCondition) {
-      this->startTask();
-    }
+    this->startTask();
     return futureResult;
   }
 
@@ -110,7 +104,8 @@ private:
     std::function<void ()> task;
 
     if (this->taskContainer.empty()
-    || this->threadRefCount >= this->maxParallelism) // Handle later or already handled
+    || this->threadRefCount >= this->maxParallelism
+    || this->status.load(std::memory_order_release) != state::START) // Handle later or already handled
       return ;
     ++this->threadRefCount;
     task = std::move(this->taskContainer.front());
