@@ -1,5 +1,5 @@
-#ifndef TASK_HPP_
-#define TASK_HPP_
+#ifndef TASK_HPP_BASE_
+#define TASK_HPP_BASE_
 
 #include <future>
 #include <functional>
@@ -11,22 +11,20 @@ public:
   Task(std::nullptr_t nullp) : function(nullptr) {}
   explicit Task(const std::function<void ()>& func) : function(func) {} // no need for future
   Task(const Task& task) :
-  function(task.function)
-  , startCallbacks(task.startCallbacks)
-  , endCallbacks(task.endCallbacks)
-  , callbackMutex() {
-  }
-  ~Task() = default;
+  function(task.function) {}
 
+  virtual ~Task() = default;
 
   void operator()() {
     function();
   }
 
-  Task& operator=(const Task& other) {
+  virtual Task& operator=(const Task& other) {
     this->function = other.function;
-    this->startCallbacks = other.startCallbacks;
-    this->endCallbacks = other.endCallbacks;
+    return *this;
+  }
+  Task& operator=(std::function<void ()> func) {
+    this->function = func;
     return *this;
   }
 
@@ -40,6 +38,28 @@ public:
     return (function != var);
   }
 
+  void operator>>(std::function<void ()> newFunc) {
+    this->function = [func = this->function, newFunc]() {
+      func();
+      newFunc();
+    };
+  }
+
+  void operator<<(std::function<void ()> newFunc) {
+    this->function = [func = this->function, newFunc]() {
+      newFunc();
+      func();
+    };
+  }
+
+  std::function<void ()> getFunction() const {
+    return this->function;
+  }
+
+  void setFunction(const std::function<void ()> func) {
+    this->function = func;
+  }
+
   template<class F, class... Args>
   auto assign(F&& function, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
@@ -49,37 +69,15 @@ public:
     auto future = task->get_future();
 
     function = [this, task]() {
-      {
-        std::lock_guard<std::mutex> guard(this->callbackMutex);
-        for (auto& callback : startCallbacks) {
-          callback();
-        }
-      }
       (*task)();
-      {
-        std::lock_guard<std::mutex> guard(this->callbackMutex);
-        for (auto& callback : endCallbacks) {
-          callback();
-        }
-      }
     };
     return future;
   }
 
-  void addCallbackBefore(const std::function<void ()>& func) {
-    startCallbacks.push_back(func);
-  }
-
-  void addCallbackAfter(const std::function<void ()>& func) {
-    endCallbacks.push_back(func);
-  }
-
+  virtual void stop() {};
 
 private:
   std::function<void ()> function;
-  std::vector<std::function<void ()>> startCallbacks;
-  std::vector<std::function<void ()>> endCallbacks;
-  std::mutex  callbackMutex;
 };
 
-#endif /* end of include guard: TASK_HPP_ */
+#endif /* end of include guard: TASK_HPP_BASE_ */
