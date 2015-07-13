@@ -52,14 +52,6 @@ public:
     };
   }
 
-  std::function<void ()> getFunction() const {
-    return this->function;
-  }
-
-  void setFunction(const std::function<void ()> func) {
-    this->function = func;
-  }
-
   template<class F, class... Args>
   auto assign(F&& function, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
