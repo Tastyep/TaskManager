@@ -1,10 +1,10 @@
 #include <chrono>
 #include <iostream>
-#include "ThreadPool_base.hpp"
+#include "ThreadPool.hh"
 #include <unistd.h>
 int main(int argc, char const *argv[]) {
   ThreadManager manager(6);
-  ThreadPool_base tp(1, manager);
+  ThreadPool tp(1, manager);
   std::vector< std::future<unsigned int> > results;
 
   tp.start();
