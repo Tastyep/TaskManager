@@ -3,6 +3,12 @@
 
 #include "Task.hpp"
 
+enum class state {
+  STOP = 0,
+  PAUSE,
+  START
+};
+
 class Worker {
 public:
   Worker();
@@ -11,14 +17,16 @@ public:
   void start(std::condition_variable& cv,
             std::mutex& condvarMutex);
   void stop();
+  void waitStopped();
   void setTask(const std::function<void ()>& task);
+  Task& getTask();
   bool isIdle();
 
 private:
   void threadMain(std::condition_variable& cv, std::mutex& condvarMutex);
 
 private:
-  Task   task;
+  Task  task;
   std::thread thread;
   std::mutex  mutex;
   bool running;

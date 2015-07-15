@@ -51,24 +51,78 @@ ThreadPool::stop() {
       return std::make_pair(false, "ThreadPool is already stopped");
   }
   this->status.store(state::STOP, std::memory_order_acquire);
+  this->emptyTasks();
   return std::make_pair(true, "");
 };
+
+void
+ThreadPool::emptyTasks() {
+  std::lock_guard<std::mutex> guardTask(this->taskMutex);
+  Task task;
+
+  while (not this->taskContainer.empty()) {
+    task = std::move(this->taskContainer.front());
+    this->taskContainer.pop();
+    task.abort();
+    task();
+  }
+}
 
 void
 ThreadPool::addTask(Task& task) {
   if (this->status.load(std::memory_order_release) == state::STOP)
     throw std::runtime_error("Can't add task on stopped ThreadPool");
 
-  task >> [this]() {
-    {
-      std::lock_guard<std::mutex> guardRef(this->refCountMutex);
-      --(this->threadRefCount);
-    }
-    this->startTask();
-  };
+  task.addCallback([this] { this->decreaseRefCount(); });
   {
     std::lock_guard<std::mutex> guard(this->taskMutex);
     taskContainer.push(task);
   }
   this->startTask();
+}
+
+void
+ThreadPool::decreaseRefCount() {
+  {
+    std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+    --(this->threadRefCount);
+  }
+  this->startTask();
+}
+
+void
+ThreadPool::startTask() {
+  std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+  std::lock_guard<std::mutex> guardTask(this->taskMutex);
+  std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+  std::shared_ptr<Worker> worker;
+  Task task;
+
+  if (this->taskContainer.empty()
+  || this->threadRefCount >= this->maxParallelism
+  || this->status.load(std::memory_order_release) != state::START) // Handle later or already handled
+    return ;
+  ++this->threadRefCount;
+  task = std::move(this->taskContainer.front());
+  this->taskContainer.pop();
+
+  const auto& stopFunction = task.getStopFunction();
+  if (not stopFunction) {
+    task.setStopFunction([this, worker]() {
+      this->removeWorkerRef(worker);
+    });
+  }
+  else {
+    task.setStopFunction([this, stopFunction, worker]() {
+      stopFunction();
+      this->removeWorkerRef(worker);
+    });
+  }
+  worker = manager.runTask(task); // send worker's state in parameter;
+  this->workers.push_back(worker);
+}
+
+void
+ThreadPool::removeWorkerRef(std::shared_ptr<Worker> worker) {
+  std::cout << "Stop" << std::endl;
 }
