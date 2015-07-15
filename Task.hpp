@@ -4,27 +4,45 @@
 #include <future>
 #include <functional>
 #include <mutex>
+#include <atomic>
+#include <vector>
 
 class Task {
 public:
-  Task() : function(nullptr) {}
-  Task(std::nullptr_t nullp) : function(nullptr) {}
-  explicit Task(const std::function<void ()>& func) : function(func) {} // no need for future
-  Task(const Task& task) :
-  function(task.function) {}
+  Task() :
+  function(nullptr),
+  stopFunction(nullptr),
+  terminated(false) {}
 
-  virtual ~Task() = default;
+  Task(std::nullptr_t nullp) :
+  function(nullptr),
+  stopFunction(nullptr),
+  terminated(false) {}
+
+  explicit Task(const std::function<void (bool)>& func) :
+  function(func),
+  stopFunction(nullptr),
+  terminated(false) {
+  } // no need for future
+
+  Task(const Task& task) :
+  function(task.function), stopFunction(task.stopFunction), terminated(terminated.load()) {}
+
+  ~Task() = default;
 
   void operator()() {
-    function();
+    this->function(this->terminated.load());
+
+    std::lock_guard<std::mutex> lock_guard(callbackMutex);
+    for (auto callback: this->callbacks) {
+      callback();
+    }
   }
 
-  virtual Task& operator=(const Task& other) {
+  Task& operator=(const Task& other) {
     this->function = other.function;
-    return *this;
-  }
-  Task& operator=(std::function<void ()> func) {
-    this->function = func;
+    this->stopFunction = other.stopFunction;
+    this->terminated = other.terminated.load();
     return *this;
   }
 
@@ -38,20 +56,6 @@ public:
     return (function != var);
   }
 
-  void operator>>(std::function<void ()> newFunc) {
-    this->function = [func = this->function, newFunc]() {
-      func();
-      newFunc();
-    };
-  }
-
-  void operator<<(std::function<void ()> newFunc) {
-    this->function = [func = this->function, newFunc]() {
-      newFunc();
-      func();
-    };
-  }
-
   template<class F, class... Args>
   auto assign(F&& function, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
@@ -60,16 +64,53 @@ public:
             (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     auto future = task->get_future();
 
-    function = [this, task]() {
+    this->function = [this, task]() {
       (*task)();
     };
     return future;
   }
 
-  virtual void stop() {};
+  template<class F, class... Args>
+  void addCallback(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+    auto wrappedTask = [this, task]() {
+      task();
+    };
+
+    std::lock_guard<std::mutex> lock_guard(callbackMutex);
+    callbacks.emplace_back(wrappedTask);
+  }
+
+  template<class F, class... Args>
+  void setStopFunction(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+
+    this->stopFunction = [this, task]() {
+      task();
+    };
+  }
+
+  const std::function<void ()>& getStopFunction() {
+    return this->stopFunction;
+  }
+
+  void stop() {
+    if (stopFunction)
+      stopFunction();
+  };
+
+  void abort() {
+    terminated.store(true); // add prior
+  }
 
 private:
-  std::function<void ()> function;
+  std::function<void (bool terminated)> function;
+  std::function<void ()> stopFunction;
+
+  std::vector<std::function<void ()> > callbacks;
+  std::mutex callbackMutex;
+
+  std::atomic_bool terminated;
 };
 
 #endif /* end of include guard: TASK_HPP_BASE_ */

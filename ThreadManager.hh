@@ -18,14 +18,14 @@ public:
   ~ThreadManager();
 
   std::pair<bool, std::string> stop();
-  void runTask(const Task& task);
+  std::shared_ptr<Worker> runTask(const Task& task);
 
 private:
   unsigned int roundToNextPower(unsigned int nbThread) const;
   void addNewThread();
 
 private:
-  std::vector<std::unique_ptr<Worker>> workers;
+  std::vector<std::shared_ptr<Worker>> workers;
   std::mutex workersMutex;
 
   mutable std::condition_variable cv;
