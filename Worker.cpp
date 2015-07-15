@@ -1,5 +1,7 @@
 #include "Worker.hh"
 
+#include <iostream> //debug
+
 Worker::Worker() :
 thread()
 , task(nullptr)
@@ -51,7 +53,7 @@ Worker::threadMain(std::condition_variable& cv, std::mutex& condvarMutex) {
         return ;
     }
     this->task();
-    this->setTask(nullptr);
+    this->setTask(Task(nullptr));
   }
 }
 
@@ -61,7 +63,13 @@ Worker::getTask() {
 }
 
 void
-Worker::setTask(const std::function<void ()>& task) {
+Worker::setTask(const std::function<void (bool)>& task) {
+  std::lock_guard<std::mutex> guard(this->mutex);
+  this->task = task;
+}
+
+void
+Worker::setTask(const Task& task) {
   std::lock_guard<std::mutex> guard(this->mutex);
   this->task = task;
 }

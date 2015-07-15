@@ -72,11 +72,9 @@ void
 ThreadPool::addTask(Task& task) {
   if (this->status.load(std::memory_order_release) == state::STOP)
     throw std::runtime_error("Can't add task on stopped ThreadPool");
-
-  task.addCallback([this] { this->decreaseRefCount(); });
   {
     std::lock_guard<std::mutex> guard(this->taskMutex);
-    taskContainer.push(task);
+    this->taskContainer.push(task);
   }
   this->startTask();
 }
@@ -106,6 +104,7 @@ ThreadPool::startTask() {
   task = std::move(this->taskContainer.front());
   this->taskContainer.pop();
 
+  task.addCallback([this] { this->decreaseRefCount(); }); // To ensure a new task will be executed
   const auto& stopFunction = task.getStopFunction();
   if (not stopFunction) {
     task.setStopFunction([this, worker]() {

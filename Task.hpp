@@ -7,6 +7,8 @@
 #include <atomic>
 #include <vector>
 
+#include <iostream> // debug
+
 class Task {
 public:
   Task() :
@@ -26,13 +28,16 @@ public:
   } // no need for future
 
   Task(const Task& task) :
-  function(task.function), stopFunction(task.stopFunction), terminated(terminated.load()) {}
+  function(
+  task.function),
+  stopFunction(task.stopFunction),
+  callbacks(task.callbacks),
+  terminated(terminated.load()) {}
 
   ~Task() = default;
 
   void operator()() {
     this->function(this->terminated.load());
-
     std::lock_guard<std::mutex> lock_guard(callbackMutex);
     for (auto callback: this->callbacks) {
       callback();
@@ -43,6 +48,12 @@ public:
     this->function = other.function;
     this->stopFunction = other.stopFunction;
     this->terminated = other.terminated.load();
+    this->callbacks = other.callbacks;
+    return *this;
+  }
+
+  Task& operator=(const std::function<void (bool)> function) {
+    this->function = function;
     return *this;
   }
 
@@ -64,8 +75,8 @@ public:
             (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     auto future = task->get_future();
 
-    this->function = [this, task]() {
-      (*task)();
+    this->function = [this, task](bool terminated) {
+      (*task)(terminated);
     };
     return future;
   }
