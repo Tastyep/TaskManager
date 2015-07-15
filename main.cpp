@@ -4,11 +4,11 @@
 #include <unistd.h>
 
 void test1(ThreadPool& tp) {
-  std::vector< std::future<unsigned int> > results;
+  std::vector< std::future<int> > results;
 
-  for (unsigned int i = 0; i < 8; ++i) {
+  for (int i = 0; i < 8; ++i) {
     results.emplace_back(
-      tp.addTask([i] {
+      tp.addTask(-1, [i] {
         return i;
       })
     );
@@ -19,11 +19,11 @@ void test1(ThreadPool& tp) {
 }
 
 void test2(ThreadPool& tp) {
-  std::vector< std::future<unsigned int> > results;
+  std::vector< std::future<int> > results;
 
-  for (unsigned int i = 0; i < 4; ++i) {
+  for (int i = 0; i < 4; ++i) {
     results.emplace_back(
-      tp.addTask([i] {
+      tp.addTask(-1, [i] {
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
         return i;
       })
@@ -37,7 +37,7 @@ void test2(ThreadPool& tp) {
 }
 
 int main(int argc, char const *argv[]) {
-  ThreadManager manager(6);
+  ThreadManager manager(1);
   ThreadPool tp(1, manager);
 
   tp.start();

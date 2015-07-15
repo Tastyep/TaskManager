@@ -35,21 +35,16 @@ public:
     auto taskWrapper = [defValue, task](bool terminated) {
       if (terminated)
         return defValue;
-      return task;
+      return task();
     };
-    auto packagedTask = std::make_shared<std::packaged_task<return_type()> >(taskWrapper);
-    futureResult = task->get_future();
+    auto packagedTask = std::make_shared<std::packaged_task<return_type(bool)> >(taskWrapper);
+    futureResult = packagedTask->get_future();
 
     {
       std::lock_guard<std::mutex> guard(this->taskMutex);
-      this->taskContainer.emplace([this, packagedTask]() {
-        (*packagedTask)();
+      this->taskContainer.emplace([this, packagedTask](bool terminated) {
+        (*packagedTask)(terminated);
       });
-      // {
-      //   std::lock_guard<std::mutex> guardRef(this->refCountMutex);
-      //   --(this->threadRefCount);
-      // }
-      // this->startTask();
     }
     this->startTask();
     return futureResult;
