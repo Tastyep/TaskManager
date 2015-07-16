@@ -21,7 +21,7 @@ public:
   stopFunction(nullptr),
   terminated(false) {}
 
-  explicit Task(const std::function<void (bool)>& func) :
+  explicit Task(const std::function<void ()>& func) :
   function(func),
   stopFunction(nullptr),
   terminated(false) {
@@ -37,7 +37,7 @@ public:
   ~Task() = default;
 
   void operator()() {
-    this->function(this->terminated.load());
+    this->function();
     std::lock_guard<std::mutex> lock_guard(callbackMutex);
     for (auto callback: this->callbacks) {
       callback();
@@ -52,7 +52,7 @@ public:
     return *this;
   }
 
-  Task& operator=(const std::function<void (bool)> function) {
+  Task& operator=(const std::function<void ()> function) {
     this->function = function;
     return *this;
   }
@@ -115,7 +115,7 @@ public:
   }
 
 private:
-  std::function<void (bool terminated)> function;
+  std::function<void ()> function;
   std::function<void ()> stopFunction;
 
   std::vector<std::function<void ()> > callbacks;
