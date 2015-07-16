@@ -51,22 +51,9 @@ ThreadPool::stop() {
       return std::make_pair(false, "ThreadPool is already stopped");
   }
   this->status.store(state::STOP, std::memory_order_acquire);
-  this->emptyTasks();
   return std::make_pair(true, "");
 };
 
-void
-ThreadPool::emptyTasks() {
-  std::lock_guard<std::mutex> guardTask(this->taskMutex);
-  Task task;
-
-  while (not this->taskContainer.empty()) {
-    task = std::move(this->taskContainer.front());
-    this->taskContainer.pop();
-    task.abort();
-    task();
-  }
-}
 
 void
 ThreadPool::addTask(Task& task) {
@@ -96,9 +83,10 @@ ThreadPool::startTask() {
   std::shared_ptr<Worker> worker;
   Task task;
 
+  std::cout << "Start Task " << this->threadRefCount  << std::endl;
   if (this->taskContainer.empty()
   || this->threadRefCount >= this->maxParallelism
-  || this->status.load(std::memory_order_release) != state::START) // Handle later or already handled
+  || this->status.load(std::memory_order_release) == state::PAUSE) // Handle later or already handled
     return ;
   ++this->threadRefCount;
   task = std::move(this->taskContainer.front());

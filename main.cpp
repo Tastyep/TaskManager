@@ -8,7 +8,7 @@ void test1(ThreadPool& tp) {
 
   for (int i = 0; i < 8; ++i) {
     results.emplace_back(
-      tp.addTask(-1, [i] {
+      tp.addTask([i] {
         return i;
       })
     );
@@ -23,7 +23,7 @@ void test2(ThreadPool& tp) {
 
   for (int i = 0; i < 4; ++i) {
     results.emplace_back(
-      tp.addTask(-1, [i] {
+      tp.addTask([i] {
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
         return i;
       })

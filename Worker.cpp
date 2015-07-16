@@ -63,7 +63,7 @@ Worker::getTask() {
 }
 
 void
-Worker::setTask(const std::function<void (bool)>& task) {
+Worker::setTask(const std::function<void ()>& task) {
   std::lock_guard<std::mutex> guard(this->mutex);
   this->task = task;
 }

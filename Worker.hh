@@ -18,7 +18,7 @@ public:
             std::mutex& condvarMutex);
   void stop();
   void waitStopped();
-  void setTask(const std::function<void (bool)>& task);
+  void setTask(const std::function<void ()>& task);
   void setTask(const Task& task);
   Task& getTask();
   bool isIdle();

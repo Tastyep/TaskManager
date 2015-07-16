@@ -22,8 +22,7 @@ public:
   void addTask(Task& task);
 
   template<class F, class... Args>
-  auto addTask(typename std::result_of<F(Args...)>::type defValue,
-  F&& function, Args&&... args)
+  auto addTask(F&& function, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
     using return_type = typename std::result_of<F(Args...)>::type;
     std::future<return_type> futureResult;
@@ -31,19 +30,14 @@ public:
     if (this->status.load(std::memory_order_release) == state::STOP)
       throw std::runtime_error("Can't add task on stopped ThreadPool");
 
-    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
-    auto taskWrapper = [defValue, task](bool terminated) {
-      if (terminated)
-        return defValue;
-      return task();
-    };
-    auto packagedTask = std::make_shared<std::packaged_task<return_type(bool)> >(taskWrapper);
+    auto packagedTask = std::make_shared<std::packaged_task<return_type()> >
+    (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     futureResult = packagedTask->get_future();
 
     {
       std::lock_guard<std::mutex> guard(this->taskMutex);
-      this->taskContainer.emplace([this, packagedTask](bool terminated) {
-        (*packagedTask)(terminated);
+      this->taskContainer.emplace([this, packagedTask]() {
+        (*packagedTask)();
       });
     }
     this->startTask();
@@ -54,7 +48,6 @@ private:
   void startTask();
   void decreaseRefCount();
   void removeWorkerRef(std::shared_ptr<Worker> worker);
-  void emptyTasks();
 
 private:
     std::queue<Task> taskContainer;
