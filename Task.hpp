@@ -75,8 +75,8 @@ public:
             (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     auto future = task->get_future();
 
-    this->function = [this, task](bool terminated) {
-      (*task)(terminated);
+    this->function = [this, task]() {
+      (*task)();
     };
     return future;
   }
