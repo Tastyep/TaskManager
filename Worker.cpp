@@ -23,14 +23,20 @@ Worker::start(std::condition_variable& cv,
 
 void
 Worker::stop() {
-  bool active;
   this->running = false;
+}
+
+void
+Worker::stopTask() {
+  bool active;
+
   {
     std::lock_guard<std::mutex> guard(this->mutex);
     active = this->task != nullptr;
   }
-  if (active)
-  this->task.stop();
+  if (active) {
+    this->task.stop();
+  }
 }
 
 void

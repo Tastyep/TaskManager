@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "ThreadPool.hh"
 
 ThreadPool::ThreadPool(unsigned int nbThreads,
@@ -51,6 +53,14 @@ ThreadPool::stop() {
       return std::make_pair(false, "ThreadPool is already stopped");
   }
   this->status.store(state::STOP, std::memory_order_acquire);
+  {
+    std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+    for (auto& worker : this->workers) {
+      worker.first->stopTask();
+    }
+    this->workers.erase(std::remove_if(this->workers.begin(), this->workers.end(),
+    [](const auto& worker) { return worker.second; }), this->workers.end());
+  }
   return std::make_pair(true, "");
 };
 
@@ -83,7 +93,6 @@ ThreadPool::startTask() {
   std::shared_ptr<Worker> worker;
   Task task;
 
-  std::cout << "Start Task " << this->threadRefCount  << std::endl;
   if (this->taskContainer.empty()
   || this->threadRefCount >= this->maxParallelism
   || this->status.load(std::memory_order_release) == state::PAUSE) // Handle later or already handled
@@ -92,7 +101,9 @@ ThreadPool::startTask() {
   task = std::move(this->taskContainer.front());
   this->taskContainer.pop();
 
-  task.addCallback([this] { this->decreaseRefCount(); }); // To ensure a new task will be executed
+  task.addCallback([this] {
+    this->decreaseRefCount();
+  }); // To ensure a new task will be executed
   const auto& stopFunction = task.getStopFunction();
   if (not stopFunction) {
     task.setStopFunction([this, worker]() {
@@ -106,10 +117,13 @@ ThreadPool::startTask() {
     });
   }
   worker = manager.runTask(task); // send worker's state in parameter;
-  this->workers.push_back(worker);
+  this->workers.push_back(std::make_pair(worker, false));
 }
 
 void
 ThreadPool::removeWorkerRef(std::shared_ptr<Worker> worker) {
-  std::cout << "Stop" << std::endl;
+  for (auto& w : this->workers) { // workerMutex is Already locked
+    if (w.first == worker)
+      w.second = true;
+  }
 }
