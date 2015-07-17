@@ -17,6 +17,7 @@ public:
   void start(std::condition_variable& cv,
             std::mutex& condvarMutex);
   void stop();
+  void stopTask();
   void waitStopped();
   void setTask(const std::function<void ()>& task);
   void setTask(const Task& task);

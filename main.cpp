@@ -30,7 +30,6 @@ void test2(ThreadPool& tp) {
     );
   }
   tp.stop();
-  std::cout << "ThreadPool Stopped" << std::endl;
   for(auto && result: results)
     std::cout << result.get() << ' ';
   std::cout << std::endl;

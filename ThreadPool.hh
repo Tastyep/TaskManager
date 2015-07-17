@@ -61,7 +61,7 @@ private:
     std::atomic<state> 	status;
     unsigned int        maxParallelism;
 
-    std::vector<std::shared_ptr<Worker> > workers;
+    std::vector<std::pair<std::shared_ptr<Worker>, bool> > workers;
     std::mutex workerMutex;
 };
 
