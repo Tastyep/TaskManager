@@ -49,9 +49,11 @@ ThreadPool::unpause() {
   }
   status.store(state::START, std::memory_order_acquire);
 
-  std::lock_guard<std::mutex> guardWorker(this->workerMutex);
-  for (auto& worker : this->workers) {
-    worker->unpauseTask();
+  {
+    std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+    for (auto& worker : this->workers) {
+      worker->unpauseTask();
+    }
   }
   this->startTask();
   return std::make_pair(true, "");
@@ -121,6 +123,7 @@ ThreadPool::startTask() {
 
 void
 ThreadPool::removeWorkerRef(std::shared_ptr<Worker> worker) {
+  std::lock_guard<std::mutex> guardWorker(this->workerMutex);
   this->workers.erase(std::remove_if(this->workers.begin(), this->workers.end(),
   [worker](const auto& w) { return w == worker; }), this->workers.end());
 }
