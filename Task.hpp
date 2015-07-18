@@ -13,26 +13,21 @@ class Task {
 public:
   Task() :
   function(nullptr),
-  stopFunction(nullptr),
-  terminated(false) {}
+  stopFunction(nullptr) {}
 
   Task(std::nullptr_t nullp) :
   function(nullptr),
-  stopFunction(nullptr),
-  terminated(false) {}
+  stopFunction(nullptr) {}
 
   explicit Task(const std::function<void ()>& func) :
   function(func),
-  stopFunction(nullptr),
-  terminated(false) {
-  } // no need for future
+  stopFunction(nullptr) {} // no need for future
 
   Task(const Task& task) :
   function(
   task.function),
   stopFunction(task.stopFunction),
-  callbacks(task.callbacks),
-  terminated(terminated.load()) {}
+  callbacks(task.callbacks) {}
 
   ~Task() = default;
 
@@ -47,7 +42,6 @@ public:
   Task& operator=(const Task& other) {
     this->function = other.function;
     this->stopFunction = other.stopFunction;
-    this->terminated = other.terminated.load();
     this->callbacks = other.callbacks;
     return *this;
   }
@@ -101,6 +95,15 @@ public:
     };
   }
 
+  template<class F, class... Args>
+  void setPauseFunction(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+
+    this->pauseFunction = [this, task]() {
+      task();
+    };
+  }
+
   const std::function<void ()>& getStopFunction() {
     return this->stopFunction;
   }
@@ -110,18 +113,18 @@ public:
       stopFunction();
   };
 
-  void abort() {
-    terminated.store(true); // add prior
-  }
+  void pause() {
+    if (pauseFunction)
+      pauseFunction();
+  };
 
 private:
   std::function<void ()> function;
   std::function<void ()> stopFunction;
+  std::function<void ()> pauseFunction;
 
   std::vector<std::function<void ()> > callbacks;
   std::mutex callbackMutex;
-
-  std::atomic_bool terminated;
 };
 
 #endif /* end of include guard: TASK_HPP_BASE_ */
