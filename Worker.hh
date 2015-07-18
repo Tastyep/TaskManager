@@ -18,6 +18,8 @@ public:
             std::mutex& condvarMutex);
   void stop();
   void stopTask();
+  void pauseTask();
+  void unpauseTask();
   void waitStopped();
   void setTask(const std::function<void ()>& task);
   void setTask(const Task& task);
@@ -31,6 +33,7 @@ private:
   Task  task;
   std::thread thread;
   std::mutex  mutex;
+  std::mutex  taskMutex;
   bool running;
 };
 

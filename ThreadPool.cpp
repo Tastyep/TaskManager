@@ -34,6 +34,11 @@ ThreadPool::pause() {
       return std::make_pair(false, "ThreadPool is not started");
   }
   this->status.store(state::PAUSE, std::memory_order_acquire);
+
+  std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+  for (auto& worker : this->workers) {
+    worker.first->pauseTask();
+  }
   return std::make_pair(true, "");
 }
 
@@ -43,6 +48,11 @@ ThreadPool::unpause() {
       return std::make_pair(false, "ThreadPool is not paused");
   }
   status.store(state::START, std::memory_order_acquire);
+
+  std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+  for (auto& worker : this->workers) {
+    worker.first->unpauseTask();
+  }
   this->startTask();
   return std::make_pair(true, "");
 }
@@ -58,8 +68,10 @@ ThreadPool::stop() {
     for (auto& worker : this->workers) {
       worker.first->stopTask();
     }
+    std::cout << "Before: " << this->workers.size() << std::endl;
     this->workers.erase(std::remove_if(this->workers.begin(), this->workers.end(),
     [](const auto& worker) { return worker.second; }), this->workers.end());
+    std::cout << "Remaining: " << this->workers.size() << std::endl;
   }
   return std::make_pair(true, "");
 };
@@ -98,32 +110,24 @@ ThreadPool::startTask() {
   || this->status.load(std::memory_order_release) == state::PAUSE) // Handle later or already handled
     return ;
   ++this->threadRefCount;
+  worker = this->manager.getWorker();
   task = std::move(this->taskContainer.front());
   this->taskContainer.pop();
 
-  task.addCallback([this] {
-    this->decreaseRefCount();
-  }); // To ensure a new task will be executed
-  const auto& stopFunction = task.getStopFunction();
-  if (not stopFunction) {
-    task.setStopFunction([this, worker]() {
-      this->removeWorkerRef(worker);
-    });
-  }
-  else {
-    task.setStopFunction([this, stopFunction, worker]() {
-      stopFunction();
-      this->removeWorkerRef(worker);
-    });
-  }
-  worker = manager.runTask(task); // send worker's state in parameter;
   this->workers.push_back(std::make_pair(worker, false));
+  task.addCallback([this, worker] {
+    this->removeWorkerRef(worker);
+    this->decreaseRefCount();
+  });
+
+  manager.startTask(worker, task);
 }
 
 void
 ThreadPool::removeWorkerRef(std::shared_ptr<Worker> worker) {
   for (auto& w : this->workers) { // workerMutex is Already locked
-    if (w.first == worker)
+    if (w.first == worker) {
       w.second = true;
+    }
   }
 }

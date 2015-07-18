@@ -18,7 +18,8 @@ public:
   ~ThreadManager();
 
   std::pair<bool, std::string> stop();
-  std::shared_ptr<Worker> runTask(const Task& task);
+  std::shared_ptr<Worker> getWorker();
+  void startTask(std::shared_ptr<Worker> worker, const Task& task);
 
 private:
   unsigned int roundToNextPower(unsigned int nbThread) const;
