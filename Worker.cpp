@@ -28,14 +28,25 @@ Worker::stop() {
 
 void
 Worker::stopTask() {
-  bool active;
-
-  {
-    std::lock_guard<std::mutex> guard(this->mutex);
-    active = this->task != nullptr;
-  }
-  if (active) {
+  std::lock_guard<std::mutex> guard(this->taskMutex);
+  if (this->task != nullptr) {
     this->task.stop();
+  }
+}
+
+void
+Worker::pauseTask() {
+  std::lock_guard<std::mutex> guard(this->taskMutex);
+  if (this->task != nullptr) {
+    this->task.pause();
+  }
+}
+
+void
+Worker::unpauseTask() {
+  std::lock_guard<std::mutex> guard(this->taskMutex);
+  if (this->task != nullptr) {
+    this->task.unpause();
   }
 }
 
@@ -65,18 +76,21 @@ Worker::threadMain(std::condition_variable& cv, std::mutex& condvarMutex) {
 
 Task&
 Worker::getTask() {
+  std::lock_guard<std::mutex> guard(this->mutex);
   return this->task;
 }
 
 void
 Worker::setTask(const std::function<void ()>& task) {
   std::lock_guard<std::mutex> guard(this->mutex);
+  std::lock_guard<std::mutex> taskGuard(this->taskMutex);
   this->task = task;
 }
 
 void
 Worker::setTask(const Task& task) {
   std::lock_guard<std::mutex> guard(this->mutex);
+  std::lock_guard<std::mutex> taskGuard(this->taskMutex);
   this->task = task;
 }
 

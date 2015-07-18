@@ -38,7 +38,7 @@ ThreadManager::roundToNextPower(unsigned int nbThread) const {
 }
 
 std::shared_ptr<Worker>
-ThreadManager::runTask(const Task& task) {
+ThreadManager::getWorker() {
   unsigned int maxThreads;
   unsigned int nbWorkers;
 
@@ -49,8 +49,6 @@ ThreadManager::runTask(const Task& task) {
 
     for (auto& worker : this->workers) {
       if (worker->isIdle()) {
-        worker->setTask(task);
-        this->cv.notify_all();
         return worker;
       }
     }
@@ -63,7 +61,13 @@ ThreadManager::runTask(const Task& task) {
   for (unsigned int i = 0; i < maxThreads - nbWorkers; ++i) {
     this->addNewThread();
   }
-  return this->runTask(task);
+  return this->getWorker();
+}
+
+void
+ThreadManager::startTask(std::shared_ptr<Worker> worker, const Task& task) {
+  worker->setTask(task);
+  this->cv.notify_all();
 }
 
 std::pair<bool, std::string>

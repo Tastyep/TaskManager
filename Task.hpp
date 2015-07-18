@@ -104,6 +104,15 @@ public:
     };
   }
 
+  template<class F, class... Args>
+  void setUnpauseFunction(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+
+    this->pauseFunction = [this, task]() {
+      task();
+    };
+  }
+
   const std::function<void ()>& getStopFunction() {
     return this->stopFunction;
   }
@@ -118,10 +127,16 @@ public:
       pauseFunction();
   };
 
+  void unpause() {
+    if (unpauseFunction)
+      unpauseFunction();
+  }
+
 private:
   std::function<void ()> function;
   std::function<void ()> stopFunction;
   std::function<void ()> pauseFunction;
+  std::function<void ()> unpauseFunction;
 
   std::vector<std::function<void ()> > callbacks;
   std::mutex callbackMutex;
