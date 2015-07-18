@@ -83,7 +83,7 @@ void test4(ThreadPool& tp) {
   });
 
   task.setStopFunction([&stop] { stop = true; });
-  task.setPauseFunction([&pause] { pause = true; });
+  task.setPauseFunction([&pause] { std::cout << "Pass" << std::endl; pause = true; });
   task.setUnpauseFunction([&pause] { pause = false; });
 
   tp.addTask(task);

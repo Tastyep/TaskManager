@@ -13,20 +13,25 @@ class Task {
 public:
   Task() :
   function(nullptr),
-  stopFunction(nullptr) {}
+  stopFunction(nullptr),
+  pauseFunction(nullptr),
+  unpauseFunction(nullptr) {}
 
   Task(std::nullptr_t nullp) :
   function(nullptr),
-  stopFunction(nullptr) {}
+  stopFunction(nullptr),
+  pauseFunction(nullptr),
+  unpauseFunction(nullptr) {}
 
   explicit Task(const std::function<void ()>& func) :
-  function(func),
-  stopFunction(nullptr) {} // no need for future
+  function(func) {} // no need for future
 
   Task(const Task& task) :
   function(
   task.function),
   stopFunction(task.stopFunction),
+  pauseFunction(task.pauseFunction),
+  unpauseFunction(task.unpauseFunction),
   callbacks(task.callbacks) {}
 
   ~Task() = default;
@@ -42,6 +47,8 @@ public:
   Task& operator=(const Task& other) {
     this->function = other.function;
     this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
     this->callbacks = other.callbacks;
     return *this;
   }
@@ -108,7 +115,7 @@ public:
   void setUnpauseFunction(F&& function, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
 
-    this->pauseFunction = [this, task]() {
+    this->unpauseFunction = [this, task]() {
       task();
     };
   }
