@@ -74,6 +74,11 @@ ThreadPool::stop() {
   return std::make_pair(true, "");
 };
 
+void
+ThreadPool::resize(unsigned int maxParallelism) {
+  std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+  this->maxParallelism = maxParallelism;
+}
 
 void
 ThreadPool::addTask(Task& task) {

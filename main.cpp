@@ -96,14 +96,33 @@ void test4(ThreadPool& tp) {
   std::cout << result.get() << std::endl;
 }
 
+void test5(ThreadPool& tp) {
+  std::vector< std::future<int> > results;
+
+  tp.start();
+  tp.resize(1);
+  for (int i = 0; i < 2; ++i) {
+    results.emplace_back(
+      tp.addTask([i] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cout << "Task " << i << " finished" << std::endl;
+        return i;
+      })
+    );
+  }
+  for(auto && result: results)
+    result.get();
+}
+
 int main(int argc, char const *argv[]) {
   ThreadManager manager(1);
-  ThreadPool tp(1, manager);
+  ThreadPool tp(2, manager);
 
   tp.start();
   test1(tp);
   test2(tp);
   test3(tp);
   test4(tp);
+  test5(tp);
   return 0;
 }

@@ -18,6 +18,7 @@ public:
   std::pair<bool, std::string> pause();
   std::pair<bool, std::string> unpause();
   std::pair<bool, std::string> stop();
+  void resize(unsigned int maxParallelism);
 
   void addTask(Task& task);
 
