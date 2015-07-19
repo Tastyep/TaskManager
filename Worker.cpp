@@ -9,7 +9,7 @@ thread()
 }
 
 Worker::~Worker() {
-  if (this->running)
+  if (this->running.load())
     this->stop();
   this->waitStopped();
 };
@@ -17,13 +17,13 @@ Worker::~Worker() {
 void
 Worker::start(std::condition_variable& cv,
       std::mutex& condvarMutex) {
-  this->running = true;
+  this->running.store(true);
   this->thread = std::thread(&Worker::threadMain, this, std::ref(cv), std::ref(condvarMutex));
 }
 
 void
 Worker::stop() {
-  this->running = false;
+  this->running.store(false);
 }
 
 void
@@ -58,15 +58,15 @@ Worker::waitStopped() {
 
 void
 Worker::threadMain(std::condition_variable& cv, std::mutex& condvarMutex) {
-  while (this->running) {
+  while (this->running.load()) {
     {
       std::unique_lock<std::mutex> lock(condvarMutex);
 
       cv.wait(lock, [this] {
-        std::lock_guard<std::mutex> guard(this->mutex);
-        return (not this->running || this->task != nullptr);
+        std::lock_guard<std::mutex> guard(this->taskMutex);
+        return (not this->running.load() || this->task != nullptr);
       });
-      if (not this->running)
+      if (not this->running.load())
         return ;
     }
     this->task();
@@ -74,28 +74,20 @@ Worker::threadMain(std::condition_variable& cv, std::mutex& condvarMutex) {
   }
 }
 
-Task&
-Worker::getTask() {
-  std::lock_guard<std::mutex> guard(this->mutex);
-  return this->task;
-}
-
 void
 Worker::setTask(const std::function<void ()>& task) {
-  std::lock_guard<std::mutex> guard(this->mutex);
   std::lock_guard<std::mutex> taskGuard(this->taskMutex);
   this->task = task;
 }
 
 void
 Worker::setTask(const Task& task) {
-  std::lock_guard<std::mutex> guard(this->mutex);
   std::lock_guard<std::mutex> taskGuard(this->taskMutex);
   this->task = task;
 }
 
 bool
 Worker::isIdle() {
-  std::lock_guard<std::mutex> guard(this->mutex);
+  std::lock_guard<std::mutex> guard(this->taskMutex);
   return (this->task == nullptr);
 }
