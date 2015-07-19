@@ -97,21 +97,15 @@ void test4(ThreadPool& tp) {
 }
 
 void test5(ThreadPool& tp) {
-  std::vector< std::future<int> > results;
-
   tp.start();
   tp.resize(1);
   for (int i = 0; i < 2; ++i) {
-    results.emplace_back(
       tp.addTask([i] {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         std::cout << "Task " << i << " finished" << std::endl;
         return i;
-      })
-    );
+      });
   }
-  for(auto && result: results)
-    result.get();
 }
 
 int main(int argc, char const *argv[]) {

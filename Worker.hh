@@ -23,7 +23,6 @@ public:
   void waitStopped();
   void setTask(const std::function<void ()>& task);
   void setTask(const Task& task);
-  Task& getTask();
   bool isIdle();
 
 private:
@@ -32,9 +31,8 @@ private:
 private:
   Task  task;
   std::thread thread;
-  std::mutex  mutex;
   std::mutex  taskMutex;
-  bool running;
+  std::atomic_bool running;
 };
 
 #endif /* end of include guard: WORKER_HH_ */

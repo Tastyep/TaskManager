@@ -61,16 +61,24 @@ ThreadPool::unpause() {
 
 std::pair<bool, std::string>
 ThreadPool::stop() {
+  bool waitCondition;
   if (this->status.load(std::memory_order_seq_cst) == state::STOP) {
       return std::make_pair(false, "ThreadPool is already stopped");
   }
   this->status.store(state::STOP, std::memory_order_acquire);
+
   {
     std::lock_guard<std::mutex> guardWorker(this->workerMutex);
     for (auto& worker : this->workers) {
       worker->stopTask();
     }
   }
+  do {
+    std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+    waitCondition = (not this->workers.empty() || not this->taskContainer.empty());
+    if (waitCondition)
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  } while (waitCondition);
   return std::make_pair(true, "");
 };
 
@@ -97,7 +105,6 @@ ThreadPool::decreaseRefCount() {
     std::lock_guard<std::mutex> guardRef(this->refCountMutex);
     --(this->threadRefCount);
   }
-  this->startTask();
 }
 
 void
@@ -121,9 +128,12 @@ ThreadPool::startTask() {
   task.addCallback([this, worker] {
     this->removeWorkerRef(worker);
     this->decreaseRefCount();
+    this->startTask();
   });
 
   manager.startTask(worker, task);
+  if (this->status.load(std::memory_order_release) == state::STOP)
+    task.stop();
 }
 
 void
