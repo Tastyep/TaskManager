@@ -5,7 +5,8 @@
 Worker::Worker() :
 thread()
 , task(nullptr)
-, running(false) {
+, running(false)
+, reserved(false) {
 }
 
 Worker::~Worker() {
@@ -17,6 +18,8 @@ Worker::~Worker() {
 void
 Worker::start(std::condition_variable& cv,
       std::mutex& condvarMutex) {
+  if (this->running.load() == true)
+    throw std::runtime_error("Can't start an already running worker");
   this->running.store(true);
   this->thread = std::thread(&Worker::threadMain, this, std::ref(cv), std::ref(condvarMutex));
 }
@@ -70,6 +73,7 @@ Worker::threadMain(std::condition_variable& cv, std::mutex& condvarMutex) {
         return ;
     }
     this->task();
+    this->setReserved(false);
     this->setTask(Task(nullptr));
   }
 }
@@ -90,4 +94,14 @@ bool
 Worker::isIdle() {
   std::lock_guard<std::mutex> guard(this->taskMutex);
   return (this->task == nullptr);
+}
+
+void
+Worker::setReserved(bool status) {
+  this->reserved.store(status);
+}
+
+bool
+Worker::isReserved() {
+  return this->reserved.load();
 }
