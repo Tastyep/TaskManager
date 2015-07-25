@@ -48,7 +48,8 @@ ThreadManager::getWorker() {
     std::lock_guard<std::mutex> guard(this->workersMutex);
 
     for (auto& worker : this->workers) {
-      if (worker->isIdle()) {
+      if (worker->isIdle() && not worker->isReserved()) {
+        worker->setReserved(true);
         return worker;
       }
     }

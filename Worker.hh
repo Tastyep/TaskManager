@@ -24,6 +24,8 @@ public:
   void setTask(const std::function<void ()>& task);
   void setTask(const Task& task);
   bool isIdle();
+  void setReserved(bool status);
+  bool isReserved();
 
 private:
   void threadMain(std::condition_variable& cv, std::mutex& condvarMutex);
@@ -33,6 +35,7 @@ private:
   std::thread thread;
   std::mutex  taskMutex;
   std::atomic_bool running;
+  std::atomic_bool reserved;
 };
 
 #endif /* end of include guard: WORKER_HH_ */
