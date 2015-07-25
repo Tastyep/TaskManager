@@ -34,7 +34,7 @@ public:
   unpauseFunction(task.unpauseFunction),
   callbacks(task.callbacks) {}
 
-  ~Task() = default;
+  virtual ~Task() = default;
 
   void operator()() {
     this->function();
