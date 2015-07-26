@@ -3,10 +3,10 @@
 #include "ThreadPool.hh"
 
 ThreadPool::ThreadPool(unsigned int nbThreads,
-                ThreadManager& manager) :
+                      ThreadManager& manager) :
 threadRefCount(0)
 , manager(manager)
-, status(state::STOP)
+, status(state::START)
 , maxParallelism(nbThreads) {
     if (nbThreads == 0)
       throw std::invalid_argument("The ThreadPool must have at least a thread");

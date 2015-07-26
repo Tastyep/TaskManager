@@ -2,36 +2,48 @@
 #define SCHEDULER_HH_
 
 #include "ThreadManager.hh"
-#include "TimedTask.hpp"
+#include "Task.hpp"
 
 class Scheduler {
 public:
   Scheduler(unsigned int nbThreads,
-                  ThreadManager& manager);
+            ThreadManager& manager);
 
   virtual ~Scheduler();
 
   template<class F, class... Args>
-  auto addTask(F&& function, const std::chrono::milliseconds& interval, Args&&... args)
+  auto runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
     using return_type = typename std::result_of<F(Args...)>::type;
     std::future<return_type> futureResult;
 
     if (this->status.load(std::memory_order_release) == state::STOP)
-      throw std::runtime_error("Can't add task on stopped ThreadPool");
+      throw std::runtime_error("Can't add task on stopped Scheduler");
 
     auto packagedTask = std::make_shared<std::packaged_task<return_type()> >
     (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     futureResult = packagedTask->get_future();
 
-    {
-      std::lock_guard<std::mutex> guard(this->taskMutex);
-      this->taskContainer.emplace([this, packagedTask]() {
+    this->runAt([this, packagedTask]() {
         (*packagedTask)();
-      }, interval);
-    }
-    this->startTask();
+      }, timePoint);
     return futureResult;
+  }
+
+  void runAt(const Task& task,
+             const std::chrono::steady_clock::time_point& timePoint);
+
+  template<class F, class... Args>
+  void runEvery(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args) {
+    if (this->status.load(std::memory_order_release) == state::STOP)
+      throw std::runtime_error("Can't add task on stopped Scheduler");
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+    auto cuNow = std::chrono::steady_clock::now() + duration;
+    this->runAt([this, task, duration]() {
+        task();
+        auto now = std::chrono::steady_clock::now();
+        this->runAt(task, now + duration);
+      }, cuNow);
   }
 
 public:
@@ -41,8 +53,9 @@ public:
   std::pair<bool, std::string> stop();
 
 private:
-  std::vector<std::pair<TimedTask, std::chrono::milliseconds> > tasks;
+  std::atomic<state> 	status;
+  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > taskContainer;
   std::mutex taskMutex;
-}
+};
 
 #endif /* end of include guard: SCHEDULER_HH_ */
