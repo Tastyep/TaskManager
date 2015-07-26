@@ -27,8 +27,7 @@ public:
   function(func) {} // no need for future
 
   Task(const Task& task) :
-  function(
-  task.function),
+  function(task.function),
   stopFunction(task.stopFunction),
   pauseFunction(task.pauseFunction),
   unpauseFunction(task.unpauseFunction),
