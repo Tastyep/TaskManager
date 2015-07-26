@@ -50,9 +50,17 @@ public:
   std::pair<bool, std::string> stop();
 
 private:
+  void mainFunction();
+
+private:
+  ThreadManager& manager;
   std::atomic<state> 	status;
+
   std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > taskContainer;
   std::mutex taskMutex;
+
+  std::vector<std::shared_ptr<Worker> > workers;
+  std::mutex workerMutex;
 };
 
 #endif /* end of include guard: SCHEDULER_HH_ */
