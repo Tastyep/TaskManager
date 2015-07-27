@@ -38,6 +38,7 @@ public:
     auto cuNow = std::chrono::steady_clock::now() + duration;
     this->runAt(Task([this, task, duration]() {
         task();
+        // to replace
         auto now = std::chrono::steady_clock::now();
         this->runAt(task, now + duration);
       }), cuNow);
@@ -51,12 +52,18 @@ public:
 
 private:
   void mainFunction();
+  std::tuple<bool, Task, std::chrono::steady_clock::time_point>
+  getHighestPriorityTask();
 
 private:
   ThreadManager& manager;
   std::atomic<state> 	status;
 
+  std::condition_variable cv;
+  std::mutex condvarMutex;
+
   std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > taskContainer;
+  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > uniqueTask;
   std::mutex taskMutex;
 
   std::vector<std::shared_ptr<Worker> > workers;

@@ -1,3 +1,5 @@
+#include <tuple>
+#include <iterator>
 #include "Scheduler.hh"
 
 Scheduler::Scheduler(unsigned int nbThreads,
@@ -14,15 +16,55 @@ manager(manager)
 
 Scheduler::~Scheduler() {
   if (this->status.load(std::memory_order_seq_cst) != state::STOP) {
-    // this->stop();
+    this->stop();
   }
 }
 
 void
 Scheduler::mainFunction() {
   while (this->status.load() != state::STOP) {
+    std::unique_lock<std::mutex> lock(this->condvarMutex);
 
+//    this->cv.wait_until();
   }
+}
+
+std::tuple<bool, Task, std::chrono::steady_clock::time_point>
+Scheduler::getHighestPriorityTask() {
+  std::lock_guard<std::mutex> guard(this->taskMutex);
+  Task task;
+  bool updateTask = true;
+
+  if (this->taskContainer.empty())
+    return std::make_tuple(false, task, std::chrono::steady_clock::now() + std::chrono::hours(1)); // Arbitrary value, just wait until it get's notified
+  auto saveIt = this->taskContainer.begin();
+  auto& tp = saveIt->second;
+
+  for (auto it = std::next(this->taskContainer.begin()); it != this->taskContainer.end(); ++it) {
+    if (it->second < tp) {
+      tp = it->second;
+      saveIt = it;
+    }
+  }
+  for (auto it = this->uniqueTask.begin(); it != uniqueTask.end(); ++it) {
+    if (it->second < tp) {
+      tp = it->second;
+      saveIt = it;
+      updateTask = false;
+    }
+  }
+  auto now = std::chrono::steady_clock::now();
+  if (saveIt->second > now)
+    return std::make_tuple(false, task, saveIt->second);
+  if (updateTask) {
+    saveIt->second = now;
+    task = saveIt->first;
+  }
+  else {
+    task = std::move(saveIt->first);
+    this->uniqueTask.erase(saveIt);
+  }
+  return std::make_tuple(true, task, now);
 }
 
 void

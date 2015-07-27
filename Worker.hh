@@ -15,7 +15,7 @@ public:
   ~Worker();
 
   void start(std::condition_variable& cv,
-            std::mutex& condvarMutex);
+             std::mutex& condvarMutex);
 
   template<class F, class... Args>
   void start(F&& function, Args&&... args) {
