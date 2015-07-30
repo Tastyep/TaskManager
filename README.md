@@ -6,7 +6,7 @@ A compiler supporting the C++14 features
 
 ### Basic Usage
 
-```
+```C++
 // Create the ThreadManager with the initial number of threads
 ThreadManager manager(1);
 
