@@ -101,10 +101,8 @@ ThreadPool::addTask(Task& task) {
 
 void
 ThreadPool::decreaseRefCount() {
-  {
-    std::lock_guard<std::mutex> guardRef(this->refCountMutex);
-    --(this->threadRefCount);
-  }
+  std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+  --(this->threadRefCount);
 }
 
 void

@@ -52,10 +52,16 @@ public:
 
 private:
   void mainFunction();
-  std::tuple<bool, Task, std::chrono::steady_clock::time_point>
+  std::pair<Task, std::chrono::steady_clock::time_point>
   getHighestPriorityTask();
+  void decreaseRefCount();
+  void removeWorkerRef(std::shared_ptr<Worker> worker);
 
 private:
+  unsigned int  threadRefCount;
+  std::mutex    refCountMutex;
+
+  unsigned int        maxParallelism;
   ThreadManager& manager;
   std::atomic<state> 	status;
 

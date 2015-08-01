@@ -4,14 +4,15 @@
 
 Scheduler::Scheduler(unsigned int nbThreads,
                      ThreadManager& manager) :
-manager(manager)
+threadRefCount(0)
+, maxParallelism(nbThreads)
+, manager(manager)
 , status(state::START)
 {
   std::shared_ptr<Worker> worker = manager.getWorker();
   Task task;
 
   task.assign(&Scheduler::mainFunction, this);
-  this->manager.startTask(worker, task);
 }
 
 Scheduler::~Scheduler() {
@@ -22,21 +23,65 @@ Scheduler::~Scheduler() {
 
 void
 Scheduler::mainFunction() {
+  std::pair<Task, std::chrono::steady_clock::time_point> task;
+  auto time_wait = std::chrono::steady_clock::now();
+  std::shared_ptr<Worker> worker;
   while (this->status.load() != state::STOP) {
     std::unique_lock<std::mutex> lock(this->condvarMutex);
 
-//    this->cv.wait_until();
+    this->cv.wait_until(lock, time_wait, [this, &task, &time_wait, &worker]() {
+      if (this->status.load() == state::STOP)
+        return true;
+      {
+        std::lock_guard<std::mutex> guard(this->refCountMutex);
+
+        if (this->threadRefCount >= this->maxParallelism) {
+          time_wait = std::chrono::steady_clock::now() + std::chrono::hours(1);
+          return false;
+        }
+        task = this->getHighestPriorityTask();
+        if (task.first == nullptr) { // update time to wait
+          time_wait = task.second;
+          return false;
+        }
+
+        worker = manager.getWorker();
+        ++this->threadRefCount;
+
+        std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+        this->workers.emplace_back(worker);
+        task.first.addCallback([this, worker] {
+          this->removeWorkerRef(worker);
+          this->decreaseRefCount();
+        });
+      }
+      return true;
+    });
+    manager.startTask(worker, task.first);
   }
 }
 
-std::tuple<bool, Task, std::chrono::steady_clock::time_point>
+void
+Scheduler::removeWorkerRef(std::shared_ptr<Worker> worker) {
+  std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+  this->workers.erase(std::remove_if(this->workers.begin(), this->workers.end(),
+  [worker](const auto& w) { return w == worker; }), this->workers.end());
+}
+
+void
+Scheduler::decreaseRefCount() {
+  std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+  --(this->threadRefCount);
+}
+
+std::pair<Task, std::chrono::steady_clock::time_point>
 Scheduler::getHighestPriorityTask() {
-  std::lock_guard<std::mutex> guard(this->taskMutex);
+    std::lock_guard<std::mutex> guard(this->taskMutex);
   Task task;
   bool updateTask = true;
 
   if (this->taskContainer.empty())
-    return std::make_tuple(false, task, std::chrono::steady_clock::now() + std::chrono::hours(1)); // Arbitrary value, just wait until it get's notified
+    return std::make_pair(task, std::chrono::steady_clock::now() + std::chrono::hours(1)); // Arbitrary value, just wait until it get's notified
   auto saveIt = this->taskContainer.begin();
   auto& tp = saveIt->second;
 
@@ -55,7 +100,7 @@ Scheduler::getHighestPriorityTask() {
   }
   auto now = std::chrono::steady_clock::now();
   if (saveIt->second > now)
-    return std::make_tuple(false, task, saveIt->second);
+    return std::make_pair(task, saveIt->second);
   if (updateTask) {
     saveIt->second = now;
     task = saveIt->first;
@@ -64,7 +109,7 @@ Scheduler::getHighestPriorityTask() {
     task = std::move(saveIt->first);
     this->uniqueTask.erase(saveIt);
   }
-  return std::make_tuple(true, task, now);
+  return std::make_pair(task, now);
 }
 
 void
