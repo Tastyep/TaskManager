@@ -61,6 +61,8 @@ private:
 
 
 private:
+  Worker worker;
+
   unsigned int  threadRefCount;
   std::mutex    refCountMutex;
 

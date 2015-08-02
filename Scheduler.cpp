@@ -9,10 +9,10 @@ threadRefCount(0)
 , manager(manager)
 , status(state::START)
 {
-  std::shared_ptr<Worker> worker = manager.getWorker();
   Task task;
 
   task.assign(&Scheduler::mainFunction, this);
+  this->worker.start(task);
 }
 
 Scheduler::~Scheduler() {
@@ -145,6 +145,7 @@ Scheduler::addTask(const Task& task,
   std::lock_guard<std::mutex> guard(this->utaskMutex);
 
   uniqueTasks.emplace_back(task, timePoint);
+  this->cv.notify_all();
 }
 
 void
@@ -156,6 +157,7 @@ Scheduler::addTask(const Task& task,
   std::lock_guard<std::mutex> guard(this->ctaskMutex);
 
   constantTasks.emplace_back(task, timePoint, duration);
+  this->cv.notify_all();
 }
 
 std::pair<bool, std::string>
