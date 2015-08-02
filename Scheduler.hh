@@ -23,7 +23,7 @@ public:
 
     this->addTask(Task([this, packagedTask]() {
         (*packagedTask)();
-      }), timePoint, this->uniqueTasks, this->utaskMutex);
+      }), timePoint);
     return futureResult;
   }
 
@@ -36,9 +36,9 @@ public:
   void runEvery(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
     auto cuNow = std::chrono::steady_clock::now() + duration;
-    this->addTask(Task([this, task, duration]() {
+    this->addTask(Task([task]() {
         task();
-    }), cuNow, this->constantTasks, this->ctaskMutex);
+    }), cuNow, duration);
   }
 
 public:
@@ -54,9 +54,11 @@ private:
   void decreaseRefCount();
   void removeWorkerRef(std::shared_ptr<Worker> worker);
   void addTask(const Task& task,
+               const std::chrono::steady_clock::time_point& timePoint);
+  void addTask(const Task& task,
                const std::chrono::steady_clock::time_point& timePoint,
-               std::vector<std::pair<Task, std::chrono::steady_clock::time_point> >& container,
-               std::mutex& associatedMutex);
+               const std::chrono::steady_clock::duration& duration);
+
 
 private:
   unsigned int  threadRefCount;
@@ -69,7 +71,9 @@ private:
   std::condition_variable cv;
   std::mutex condvarMutex;
 
-  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > constantTasks;
+  std::vector<std::tuple<Task,
+                         std::chrono::steady_clock::time_point,
+                         std::chrono::steady_clock::duration> > constantTasks;
   std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > uniqueTasks;
   std::mutex utaskMutex;
   std::mutex ctaskMutex;

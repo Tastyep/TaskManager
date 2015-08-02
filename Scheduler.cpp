@@ -80,36 +80,44 @@ Scheduler::getHighestPriorityTask() {
   std::lock_guard<std::mutex> utaskGuard(this->utaskMutex);
   std::lock_guard<std::mutex> ctaskGuard(this->ctaskMutex);
   Task task;
-  bool updateTask = true;
+  decltype(this->constantTasks.begin()) saveConstantIt;
+  decltype(this->uniqueTasks.begin()) saveUniqueIt;
+  // Arbitrary value, just wait until it get's notified
+  auto tp = std::chrono::steady_clock::now() + std::chrono::hours(1);
+  bool updateTask = (not this->constantTasks.empty());
 
-  if (this->constantTasks.empty())
-    return std::make_pair(task, std::chrono::steady_clock::now() + std::chrono::hours(1)); // Arbitrary value, just wait until it get's notified
-  auto saveIt = this->constantTasks.begin();
-  auto& tp = saveIt->second;
+  if (this->constantTasks.empty() && this->uniqueTasks.empty())
+    return std::make_pair(task, tp);
+  if (not this->constantTasks.empty()) {
+    saveConstantIt = this->constantTasks.begin();
+    auto& tp = std::get<1>(*saveConstantIt);
 
-  for (auto it = std::next(this->constantTasks.begin()); it != this->constantTasks.end(); ++it) {
-    if (it->second < tp) {
-      tp = it->second;
-      saveIt = it;
+    for (auto it = std::next(this->constantTasks.begin()); it != this->constantTasks.end(); ++it) {
+      if (std::get<1>(*it) < tp) {
+        tp = std::get<1>(*it);
+        saveConstantIt = it;
+      }
     }
   }
-  for (auto it = this->uniqueTasks.begin(); it != uniqueTasks.end(); ++it) {
-    if (it->second < tp) {
-      tp = it->second;
-      saveIt = it;
-      updateTask = false;
+  if (not this->uniqueTasks.empty()) {
+    for (auto it = this->uniqueTasks.begin(); it != uniqueTasks.end(); ++it) {
+      if (it->second < tp) {
+        tp = it->second;
+        saveUniqueIt = it;
+        updateTask = false;
+      }
     }
   }
   auto now = std::chrono::steady_clock::now();
-  if (saveIt->second > now)
-    return std::make_pair(task, saveIt->second);
+  if (tp > now)
+    return std::make_pair(task, tp);
   if (updateTask) {
-    saveIt->second = now; // should not be now  but now + duration
-    task = saveIt->first;
+    std::get<1>(*saveConstantIt) = (now + std::get<2>(*saveConstantIt)); // should not be now  but now + duration
+    task = std::get<0>(*saveConstantIt);
   }
   else {
-    task = std::move(saveIt->first);
-    this->uniqueTasks.erase(saveIt);
+    task = std::move(saveUniqueIt->first);
+    this->uniqueTasks.erase(saveUniqueIt);
   }
   return std::make_pair(task, now);
 }
@@ -117,28 +125,37 @@ Scheduler::getHighestPriorityTask() {
 void
 Scheduler::runAt(const Task& task,
                  const std::chrono::steady_clock::time_point& timePoint) {
-  this->addTask(task, timePoint, uniqueTasks, utaskMutex);
+  this->addTask(task, timePoint);
 }
 
 void
 Scheduler::runEvery(const Task& task,
                     const std::chrono::steady_clock::duration& duration) {
   auto cuNow = std::chrono::steady_clock::now() + duration;
-  this->addTask(Task([this, task(task), duration]() mutable {
+  this->addTask(Task([task(task)]() mutable {
       task();
-    }), cuNow, this->constantTasks, this->ctaskMutex);
+    }), cuNow, duration);
+}
+
+void
+Scheduler::addTask(const Task& task,
+                   const std::chrono::steady_clock::time_point& timePoint) {
+  if (this->status.load(std::memory_order_release) == state::STOP)
+    throw std::runtime_error("Can't add task on stopped Scheduler");
+  std::lock_guard<std::mutex> guard(this->utaskMutex);
+
+  uniqueTasks.emplace_back(task, timePoint);
 }
 
 void
 Scheduler::addTask(const Task& task,
                    const std::chrono::steady_clock::time_point& timePoint,
-                   std::vector<std::pair<Task, std::chrono::steady_clock::time_point> >& container,
-                   std::mutex& associatedMutex) {
+                   const std::chrono::steady_clock::duration& duration) {
   if (this->status.load(std::memory_order_release) == state::STOP)
     throw std::runtime_error("Can't add task on stopped Scheduler");
-  std::lock_guard<std::mutex> guard(associatedMutex);
+  std::lock_guard<std::mutex> guard(this->ctaskMutex);
 
-  container.emplace_back(task, timePoint);
+  constantTasks.emplace_back(task, timePoint, duration);
 }
 
 std::pair<bool, std::string>
