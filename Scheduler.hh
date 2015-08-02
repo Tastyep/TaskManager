@@ -21,9 +21,9 @@ public:
     (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     futureResult = packagedTask->get_future();
 
-    this->runAt(Task([this, packagedTask]() {
+    this->addTask(Task([this, packagedTask]() {
         (*packagedTask)();
-      }), timePoint);
+      }), timePoint, this->uniqueTasks, this->utaskMutex);
     return futureResult;
   }
 
@@ -36,13 +36,9 @@ public:
   void runEvery(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
     auto cuNow = std::chrono::steady_clock::now() + duration;
-    this->runAt(Task([this, task, duration]() {
+    this->addTask(Task([this, task, duration]() {
         task();
-        if (this->status.load(std::memory_order_release) != state::STOP) {
-          auto now = std::chrono::steady_clock::now();
-          this->runAt(task, now + duration);
-        }
-      }), cuNow);
+    }), cuNow, this->constantTasks, this->ctaskMutex);
   }
 
 public:
@@ -57,6 +53,10 @@ private:
   getHighestPriorityTask();
   void decreaseRefCount();
   void removeWorkerRef(std::shared_ptr<Worker> worker);
+  void addTask(const Task& task,
+               const std::chrono::steady_clock::time_point& timePoint,
+               std::vector<std::pair<Task, std::chrono::steady_clock::time_point> >& container,
+               std::mutex& associatedMutex);
 
 private:
   unsigned int  threadRefCount;
@@ -69,9 +69,10 @@ private:
   std::condition_variable cv;
   std::mutex condvarMutex;
 
-  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > taskContainer;
-  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > uniqueTask;
-  std::mutex taskMutex;
+  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > constantTasks;
+  std::vector<std::pair<Task, std::chrono::steady_clock::time_point> > uniqueTasks;
+  std::mutex utaskMutex;
+  std::mutex ctaskMutex;
 
   std::vector<std::shared_ptr<Worker> > workers;
   std::mutex workerMutex;
