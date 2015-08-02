@@ -38,9 +38,10 @@ public:
     auto cuNow = std::chrono::steady_clock::now() + duration;
     this->runAt(Task([this, task, duration]() {
         task();
-        // to replace
-        auto now = std::chrono::steady_clock::now();
-        this->runAt(task, now + duration);
+        if (this->status.load(std::memory_order_release) != state::STOP) {
+          auto now = std::chrono::steady_clock::now();
+          this->runAt(task, now + duration);
+        }
       }), cuNow);
   }
 
