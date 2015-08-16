@@ -134,6 +134,16 @@ void schedule2(Scheduler& scheduler) {
     std::cout << future.get() << std::endl;
 }
 
+void schedule3(Scheduler& scheduler) {
+  scheduler.runEvery([]() {
+                        std::cout << "Every second" << std::endl;
+                    }, std::chrono::milliseconds(1000));
+  scheduler.runIn([]() {
+      std::cout << "3 seconds elapsed" << std::endl;;
+  }, std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+}
+
 int main(int argc, char const *argv[]) {
   ThreadManager manager(1);
 //  ThreadPool tp(2, manager);
@@ -150,5 +160,6 @@ int main(int argc, char const *argv[]) {
 
   schedule1(scheduler);
   schedule2(scheduler);
+  schedule3(scheduler);
   return 0;
 }

@@ -97,9 +97,8 @@ Scheduler::getHighestPriorityTask() {
     return std::make_pair(task, tp);
   if (not this->constantTasks.empty()) {
     saveConstantIt = this->constantTasks.begin();
-    auto& tp = std::get<1>(*saveConstantIt);
 
-    for (auto it = std::next(this->constantTasks.begin()); it != this->constantTasks.end(); ++it) {
+    for (auto it = this->constantTasks.begin(); it != this->constantTasks.end(); ++it) {
       if (std::get<1>(*it) < tp) {
         tp = std::get<1>(*it);
         saveConstantIt = it;
@@ -116,10 +115,11 @@ Scheduler::getHighestPriorityTask() {
     }
   }
   auto now = std::chrono::steady_clock::now();
-  if (tp > now)
+  if (tp > now) {
     return std::make_pair(task, tp);
+  }
   if (updateTask) {
-    std::get<1>(*saveConstantIt) = (now + std::get<2>(*saveConstantIt)); // should not be now  but now + duration
+    std::get<1>(*saveConstantIt) = (now + std::get<2>(*saveConstantIt));
     task = std::get<0>(*saveConstantIt);
   }
   else {
