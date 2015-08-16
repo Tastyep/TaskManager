@@ -136,6 +136,12 @@ Scheduler::runAt(const Task& task,
 }
 
 void
+Scheduler::runIn(const Task& task,
+                 const std::chrono::steady_clock::duration& duration) {
+  this->addTask(task, std::chrono::steady_clock::now() + duration);
+}
+
+void
 Scheduler::runEvery(const Task& task,
                     const std::chrono::steady_clock::duration& duration) {
   auto cuNow = std::chrono::steady_clock::now() + duration;

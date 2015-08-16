@@ -27,8 +27,26 @@ public:
     return futureResult;
   }
 
+  template<class F, class... Args>
+  auto runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
+    -> std::future<typename std::result_of<F(Args...)>::type> {
+    using return_type = typename std::result_of<F(Args...)>::type;
+    std::future<return_type> futureResult;
+
+    auto packagedTask = std::make_shared<std::packaged_task<return_type()> >
+    (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+    futureResult = packagedTask->get_future();
+
+    this->addTask(Task([this, packagedTask]() {
+        (*packagedTask)();
+      }), std::chrono::steady_clock::now() + duration);
+    return futureResult;
+  }
+
   void runAt(const Task& task,
              const std::chrono::steady_clock::time_point& timePoint);
+  void runIn(const Task& task,
+             const std::chrono::steady_clock::duration& duration);
   void runEvery(const Task& task,
                 const std::chrono::steady_clock::duration& duration);
 

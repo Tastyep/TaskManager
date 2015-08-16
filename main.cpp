@@ -110,10 +110,28 @@ void test5(ThreadPool& tp) {
 }
 
 void schedule1(Scheduler& scheduler) {
-  auto future = scheduler.runAt([]() {
-                  return "Done";
+  auto future1 = scheduler.runAt([]() {
+                  return "Done1";
                 }, std::chrono::steady_clock::now() + std::chrono::milliseconds(200));
-  std::cout << future.get() << std::endl;
+  auto future2 = scheduler.runIn([]() {
+                  return "Done2";
+                }, std::chrono::milliseconds(200));
+
+  std::cout << future1.get() << std::endl;
+  std::cout << future2.get() << std::endl;
+}
+
+void schedule2(Scheduler& scheduler) {
+  std::vector<std::future<int>> futures;
+
+  for (int i = 0; i < 10; ++i) {
+    futures.emplace_back(scheduler.runIn([i]() {
+                          return i;
+                        }, std::chrono::milliseconds(100 * i))
+                      );
+  }
+  for (auto& future : futures)
+    std::cout << future.get() << std::endl;
 }
 
 int main(int argc, char const *argv[]) {
@@ -131,5 +149,6 @@ int main(int argc, char const *argv[]) {
 //  std::cout << "------- Scheduler -------" << std::endl;
 
   schedule1(scheduler);
+  schedule2(scheduler);
   return 0;
 }
