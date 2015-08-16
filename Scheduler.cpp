@@ -7,7 +7,7 @@ Scheduler::Scheduler(unsigned int nbThreads,
 threadRefCount(0)
 , maxParallelism(nbThreads)
 , manager(manager)
-, status(state::START)
+, status(state::PAUSE)
 {
   Task task;
 
@@ -25,29 +25,34 @@ void
 Scheduler::mainFunction() {
   std::pair<Task, std::chrono::steady_clock::time_point> task;
   auto time_wait = std::chrono::steady_clock::now();
+
   std::shared_ptr<Worker> worker;
+  this->status.store(state::START);
   while (this->status.load() != state::STOP) {
     std::unique_lock<std::mutex> lock(this->condvarMutex);
-
     this->cv.wait_until(lock, time_wait, [this, &task, &time_wait, &worker]() {
-      if (this->status.load() == state::STOP)
+      std::lock_guard<std::mutex> stopGuard(this->stopMutex);
+      if (this->status.load() == state::STOP) {
         return true;
+      }
+      else if (this->status.load() == state::PAUSE) {
+        time_wait = std::chrono::steady_clock::now() + std::chrono::hours(1);
+        return false;
+      }
       {
         std::lock_guard<std::mutex> guard(this->refCountMutex);
-
         if (this->threadRefCount >= this->maxParallelism) {
           time_wait = std::chrono::steady_clock::now() + std::chrono::hours(1);
           return false;
         }
+
         task = this->getHighestPriorityTask();
         if (task.first == nullptr) { // update time to wait
           time_wait = task.second;
-          return false;
+          return this->status.load() == state::STOP;
         }
-
         worker = manager.getWorker();
         ++this->threadRefCount;
-
         std::lock_guard<std::mutex> guardWorker(this->workerMutex);
         this->workers.emplace_back(worker);
         task.first.addCallback([this, worker] {
@@ -58,6 +63,8 @@ Scheduler::mainFunction() {
       }
       return true;
     });
+    if (this->status.load() == state::STOP)
+      return ;
     manager.startTask(worker, task.first);
   }
 }
@@ -161,16 +168,6 @@ Scheduler::addTask(const Task& task,
 }
 
 std::pair<bool, std::string>
-Scheduler::start() {
-  if (this->status.load(std::memory_order_seq_cst) != state::STOP) {
-      return std::make_pair(false, "Scheduler has already been started");
-  }
-
-  status.store(state::START, std::memory_order_seq_cst);       // we can now exectue tasks
-  return std::make_pair(true, "");
-}
-
-std::pair<bool, std::string>
 Scheduler::pause() {
   if (this->status.load(std::memory_order_seq_cst) != state::START) {
       return std::make_pair(false, "Scheduler is not started");
@@ -200,14 +197,15 @@ Scheduler::unpause() {
   return std::make_pair(true, "");
 }
 
-std::pair<bool, std::string>
+void
 Scheduler::stop() {
   bool waitCondition;
-  if (this->status.load(std::memory_order_seq_cst) == state::STOP) {
-      return std::make_pair(false, "Scheduler is already stopped");
+  {
+    this->status.store(state::STOP, std::memory_order_acquire);
+    std::lock_guard<std::mutex> stopGuard(this->stopMutex);
+    this->cv.notify_all();
   }
-  this->status.store(state::STOP, std::memory_order_acquire);
-
+  this->worker.waitStopped();
   {
     std::lock_guard<std::mutex> guardWorker(this->workerMutex);
     for (auto& worker : this->workers) {
@@ -215,10 +213,11 @@ Scheduler::stop() {
     }
   }
   do {
-    std::lock_guard<std::mutex> guardWorker(this->workerMutex);
-    waitCondition = (not this->workers.empty() || not this->constantTasks.empty());
+    {
+      std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+      waitCondition = (not this->workers.empty());
+    }
     if (waitCondition)
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
   } while (waitCondition);
-  return std::make_pair(true, "");
 };

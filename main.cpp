@@ -111,15 +111,14 @@ void test5(ThreadPool& tp) {
 
 void schedule1(Scheduler& scheduler) {
   auto future = scheduler.runAt([]() {
-                  std::cout << "Scheduler waited one second" << std::endl;
-                  return "scheduler test1 done";
-                }, std::chrono::steady_clock::now() + std::chrono::seconds(1));
+                  return "Done";
+                }, std::chrono::steady_clock::now() + std::chrono::milliseconds(200));
   std::cout << future.get() << std::endl;
 }
 
 int main(int argc, char const *argv[]) {
   ThreadManager manager(1);
-  ThreadPool tp(2, manager);
+//  ThreadPool tp(2, manager);
   Scheduler scheduler(2, manager);
 
   // tp.start();
@@ -129,7 +128,7 @@ int main(int argc, char const *argv[]) {
   // test4(tp);
   // test5(tp);
 
-  std::cout << "------- Scheduler -------" << std::endl;
+//  std::cout << "------- Scheduler -------" << std::endl;
 
   schedule1(scheduler);
   return 0;

@@ -42,12 +42,11 @@ public:
   }
 
 public:
-  std::pair<bool, std::string> start();
   std::pair<bool, std::string> pause();
   std::pair<bool, std::string> unpause();
-  std::pair<bool, std::string> stop();
 
 private:
+  void stop();
   void mainFunction();
   std::pair<Task, std::chrono::steady_clock::time_point>
   getHighestPriorityTask();
@@ -82,6 +81,8 @@ private:
 
   std::vector<std::shared_ptr<Worker> > workers;
   std::mutex workerMutex;
+
+  std::mutex stopMutex;
 };
 
 #endif /* end of include guard: SCHEDULER_HH_ */
