@@ -139,9 +139,35 @@ void schedule3(Scheduler& scheduler) {
                         std::cout << "Every second" << std::endl;
                     }, std::chrono::milliseconds(1000));
   scheduler.runIn([]() {
-      std::cout << "3 seconds elapsed" << std::endl;;
+      std::cout << "3 seconds elapsed" << std::endl;
   }, std::chrono::seconds(3));
   std::this_thread::sleep_for(std::chrono::seconds(5));
+}
+
+void schedule4(ThreadManager& manager) {
+  Scheduler scheduler(2, manager);
+  bool stop = false;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  Task task([&stop, &scheduler]() {
+    unsigned int i = 1;
+    std::cout << "task launched" << std::endl;
+    while (!stop) {
+      auto future = scheduler.runIn([i]() {
+        return "";//std::to_string(i) + " second elapsed";
+      }, std::chrono::milliseconds(60));
+      std::cout << future.get() << std::endl;
+      ++i;
+    }
+  });
+  task.setStopFunction([&stop]() {
+    stop = true;
+  });
+  scheduler.runAt(task, std::chrono::steady_clock::now());
+  //std::cout << "Press a key to continue" << std::endl;
+  getchar();
+  std::cout << "end" << std::endl;
 }
 
 int main(int argc, char const *argv[]) {
@@ -158,8 +184,9 @@ int main(int argc, char const *argv[]) {
 
 //  std::cout << "------- Scheduler -------" << std::endl;
 
-  schedule1(scheduler);
-  schedule2(scheduler);
-  schedule3(scheduler);
+  // schedule1(scheduler);
+  // schedule2(scheduler);
+//  schedule3(scheduler);
+  schedule4(manager);
   return 0;
 }

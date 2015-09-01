@@ -27,3 +27,6 @@
 *.out
 *.app
 *~
+
+q.hpp
+*a.out*

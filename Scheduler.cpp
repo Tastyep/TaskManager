@@ -7,7 +7,7 @@ Scheduler::Scheduler(unsigned int nbThreads,
 threadRefCount(0)
 , maxParallelism(nbThreads)
 , manager(manager)
-, status(state::PAUSE)
+, status(state::START)
 {
   Task task;
 
@@ -31,7 +31,6 @@ Scheduler::mainFunction() {
   while (this->status.load() != state::STOP) {
     std::unique_lock<std::mutex> lock(this->condvarMutex);
     this->cv.wait_until(lock, time_wait, [this, &task, &time_wait, &worker]() {
-      std::lock_guard<std::mutex> stopGuard(this->stopMutex);
       if (this->status.load() == state::STOP) {
         return true;
       }
@@ -49,7 +48,7 @@ Scheduler::mainFunction() {
         task = this->getHighestPriorityTask();
         if (task.first == nullptr) { // update time to wait
           time_wait = task.second;
-          return this->status.load() == state::STOP;
+          return false;
         }
         worker = manager.getWorker();
         ++this->threadRefCount;
@@ -58,6 +57,8 @@ Scheduler::mainFunction() {
         task.first.addCallback([this, worker] {
           this->removeWorkerRef(worker);
           this->decreaseRefCount();
+
+          std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
           this->cv.notify_all();
         });
       }
@@ -150,11 +151,17 @@ Scheduler::runEvery(const Task& task,
     }), cuNow, duration);
 }
 
+// Be sure to lock condvarMutex before utaskMutex
+// utaskMutex is locked in the condvar callback
+// Because the condvar in it's callback will lock condvarMutex, if it is locked after utaskMutex bellow
+// It will cause a deadlock, both the callback and the function bellow blocking on utaskMutex
+
 void
 Scheduler::addTask(const Task& task,
                    const std::chrono::steady_clock::time_point& timePoint) {
   if (this->status.load(std::memory_order_release) == state::STOP)
     throw std::runtime_error("Can't add task on stopped Scheduler");
+  std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
   std::lock_guard<std::mutex> guard(this->utaskMutex);
 
   uniqueTasks.emplace_back(task, timePoint);
@@ -167,6 +174,7 @@ Scheduler::addTask(const Task& task,
                    const std::chrono::steady_clock::duration& duration) {
   if (this->status.load(std::memory_order_release) == state::STOP)
     throw std::runtime_error("Can't add task on stopped Scheduler");
+  std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
   std::lock_guard<std::mutex> guard(this->ctaskMutex);
 
   constantTasks.emplace_back(task, timePoint, duration);
@@ -207,8 +215,8 @@ void
 Scheduler::stop() {
   bool waitCondition;
   {
+    std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
     this->status.store(state::STOP, std::memory_order_acquire);
-    std::lock_guard<std::mutex> stopGuard(this->stopMutex);
     this->cv.notify_all();
   }
   this->worker.waitStopped();
