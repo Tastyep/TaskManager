@@ -153,21 +153,44 @@ void schedule4(ThreadManager& manager) {
   Task task([&stop, &scheduler]() {
     unsigned int i = 1;
     while (!stop) {
-      auto future = scheduler.runIn([i]() {
-        return "";//std::to_string(i) + " second elapsed";
-      }, std::chrono::milliseconds(60));
-      std::cout << future.get() << std::endl;
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::cout << std::to_string(i) + " second elapsed" << std::endl;
       ++i;
     }
+    std::cout << "schedule4 Done" << std::endl;
   });
   task.setStopFunction([&stop]() {
     stop = true;
   });
-  std::cout << "before runAt" << std::endl;
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   scheduler.runAt(task, std::chrono::steady_clock::now());
-  //std::cout << "Press a key to continue" << std::endl;
   getchar();
-  std::cout << "end" << std::endl;
+}
+
+// Not possible to add tasks in a scheduled task atm
+void schedule5(ThreadManager& manager) {
+  Scheduler scheduler(2, manager);
+  bool stop = false;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  Task task([&stop, &scheduler]() {
+    unsigned int i = 1;
+    while (!stop) {
+      auto future = scheduler.runIn([i]() {
+        return std::to_string(i) + " second elapsed";
+      }, std::chrono::milliseconds(60));
+      std::cout << future.get() << " " << (int)stop << std::endl;
+      ++i;
+    }
+    std::cout << "leave" << std::endl;
+  });
+  task.setStopFunction([&stop]() {
+    stop = true;
+  });
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  scheduler.runAt(task, std::chrono::steady_clock::now());
+  getchar();
 }
 
 int main(int argc, char const *argv[]) {

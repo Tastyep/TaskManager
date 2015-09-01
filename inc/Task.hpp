@@ -36,9 +36,7 @@ public:
   callbacks(task.callbacks) {
   }
 
-  Task(Task&& other)
-  {
-    std::cout << "&&: " << this << " " << &other << " " << (stopFunction != nullptr) << " " << (other.stopFunction != nullptr) << std::endl;
+  Task(Task&& other) {
     this->function = other.function;
     this->stopFunction = other.stopFunction;
     this->pauseFunction = other.pauseFunction;
@@ -60,11 +58,9 @@ public:
     return *this;
   }
 
-  Task& operator=(Task&& other)
-  {
+  Task& operator=(Task&& other) {
     if (this == &other)
       return *this;
-      std::cout << "=&&: " << this << " " << &other << " " << (stopFunction != nullptr) << " " << (other.stopFunction != nullptr) << std::endl;
 
     this->function = other.function;
     this->stopFunction = other.stopFunction;
@@ -133,7 +129,6 @@ public:
   void setStopFunction(F&& function, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
 
-    std::cout << "stopFunction" << std::endl;
     this->stopFunction = [this, task]() {
       task();
     };
@@ -162,9 +157,8 @@ public:
   }
 
   void stop() const {
-    std::cout << "STOP: " << (stopFunction != nullptr) << std::endl;
-    // if (stopFunction)
-    //   stopFunction();
+    if (stopFunction)
+      stopFunction();
   };
 
   void pause() {

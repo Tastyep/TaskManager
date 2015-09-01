@@ -20,7 +20,7 @@ OBJS	= $(addprefix $(OBJDIR), $(SRCS:.cpp=.o))
 
 INCCOMP	= -I$(INCDIR)
 
-CXXFLAGS = -std=c++1y
+CXXFLAGS = -std=c++1y -g
 
 dummy	:= 	$(shell test -d $(OBJDIR) || mkdir $(OBJDIR))
 

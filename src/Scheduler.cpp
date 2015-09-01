@@ -8,6 +8,7 @@ threadRefCount(0)
 , maxParallelism(nbThreads)
 , manager(manager)
 , status(state::START)
+, running(true)
 {
   Task task;
 
@@ -28,13 +29,12 @@ Scheduler::mainFunction() {
 
   std::shared_ptr<Worker> worker;
   this->status.store(state::START);
-  while (this->status.load() != state::STOP) {
+  while (running.load()) {
     std::unique_lock<std::mutex> lock(this->condvarMutex);
     this->cv.wait_until(lock, time_wait, [this, &task, &time_wait, &worker]() {
-      if (this->status.load() == state::STOP) {
+      if (this->running.load() == false)
         return true;
-      }
-      else if (this->status.load() == state::PAUSE) {
+      if (this->status.load() == state::PAUSE) {
         time_wait = std::chrono::steady_clock::now() + std::chrono::hours(1);
         return false;
       }
@@ -64,10 +64,11 @@ Scheduler::mainFunction() {
       }
       return true;
     });
-    if (this->status.load() == state::STOP)
+    if (this->running.load() == false)
       return ;
-    task.first.stop();
-    //manager.startTask(worker, task.first);
+    manager.startTask(worker, task.first);
+    if (this->status.load() == state::STOP)
+      task.first.stop();
   }
 }
 
@@ -134,8 +135,7 @@ Scheduler::getHighestPriorityTask() {
 void
 Scheduler::runAt(const Task& task,
                  const std::chrono::steady_clock::time_point& timePoint) {
-  task.stop();
-//  this->addTask(task, timePoint);
+  this->addTask(task, timePoint);
 }
 
 void
@@ -161,12 +161,13 @@ Scheduler::runEvery(const Task& task,
 void
 Scheduler::addTask(const Task& task,
                    const std::chrono::steady_clock::time_point& timePoint) {
-  if (this->status.load(std::memory_order_release) == state::STOP)
+  if (this->status.load(std::memory_order_release) == state::STOP) {
     throw std::runtime_error("Can't add task on stopped Scheduler");
+  }
   std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
   std::lock_guard<std::mutex> guard(this->utaskMutex);
 
-  uniqueTasks.emplace_back(task, timePoint);
+  this->uniqueTasks.emplace_back(task, timePoint);
   this->cv.notify_all();
 }
 
@@ -179,7 +180,7 @@ Scheduler::addTask(const Task& task,
   std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
   std::lock_guard<std::mutex> guard(this->ctaskMutex);
 
-  constantTasks.emplace_back(task, timePoint, duration);
+  this->constantTasks.emplace_back(task, timePoint, duration);
   this->cv.notify_all();
 }
 
@@ -221,7 +222,10 @@ Scheduler::stop() {
     this->status.store(state::STOP, std::memory_order_acquire);
     this->cv.notify_all();
   }
-  this->worker.waitStopped();
+  {
+    std::lock_guard<std::mutex> guard(this->ctaskMutex);
+    this->constantTasks.clear();
+  }
   {
     std::lock_guard<std::mutex> guardWorker(this->workerMutex);
     for (auto& worker : this->workers) {
@@ -231,10 +235,16 @@ Scheduler::stop() {
   do {
     {
       std::lock_guard<std::mutex> guardWorker(this->workerMutex);
-      waitCondition = (not this->workers.empty());
-      std::cout << this->workers.size() << std::endl;
+      std::lock_guard<std::mutex> guardUniqueTask(this->utaskMutex);
+      waitCondition = (not this->workers.empty() || not this->uniqueTasks.empty());
     }
     if (waitCondition)
       std::this_thread::sleep_for(std::chrono::milliseconds(100));
   } while (waitCondition);
-};
+  {
+    std::lock_guard<std::mutex> condvarGuard(this->condvarMutex);
+    this->running.store(false, std::memory_order_acquire);
+    this->cv.notify_all();
+  }
+  this->worker.waitStopped();
+}

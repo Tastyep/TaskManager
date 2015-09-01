@@ -11,13 +11,13 @@ public:
 
   virtual ~Scheduler();
 
-  template<class F, class... Args>
+  template<class F, class... Args,
+  class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
   auto runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
     using return_type = typename std::result_of<F(Args...)>::type;
     std::future<return_type> futureResult;
 
-    std::cout << "runAt templated" << std::endl;
     auto packagedTask = std::make_shared<std::packaged_task<return_type()> >
     (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     futureResult = packagedTask->get_future();
@@ -28,7 +28,8 @@ public:
     return futureResult;
   }
 
-  template<class F, class... Args>
+  template<class F, class... Args,
+  class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
   auto runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type> {
     using return_type = typename std::result_of<F(Args...)>::type;
@@ -77,7 +78,6 @@ private:
                const std::chrono::steady_clock::time_point& timePoint,
                const std::chrono::steady_clock::duration& duration);
 
-
 private:
   Worker worker;
 
@@ -87,6 +87,7 @@ private:
   unsigned int        maxParallelism;
   ThreadManager& manager;
   std::atomic<state> 	status;
+  std::atomic_bool running;
 
   std::condition_variable cv;
   std::mutex condvarMutex;
