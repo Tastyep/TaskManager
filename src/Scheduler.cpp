@@ -66,7 +66,8 @@ Scheduler::mainFunction() {
     });
     if (this->status.load() == state::STOP)
       return ;
-    manager.startTask(worker, task.first);
+    task.first.stop();
+    //manager.startTask(worker, task.first);
   }
 }
 
@@ -133,7 +134,8 @@ Scheduler::getHighestPriorityTask() {
 void
 Scheduler::runAt(const Task& task,
                  const std::chrono::steady_clock::time_point& timePoint) {
-  this->addTask(task, timePoint);
+  task.stop();
+//  this->addTask(task, timePoint);
 }
 
 void
@@ -230,6 +232,7 @@ Scheduler::stop() {
     {
       std::lock_guard<std::mutex> guardWorker(this->workerMutex);
       waitCondition = (not this->workers.empty());
+      std::cout << this->workers.size() << std::endl;
     }
     if (waitCondition)
       std::this_thread::sleep_for(std::chrono::milliseconds(100));

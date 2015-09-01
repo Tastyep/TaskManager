@@ -17,6 +17,7 @@ public:
     using return_type = typename std::result_of<F(Args...)>::type;
     std::future<return_type> futureResult;
 
+    std::cout << "runAt templated" << std::endl;
     auto packagedTask = std::make_shared<std::packaged_task<return_type()> >
     (std::bind(std::forward<F>(function), std::forward<Args>(args)...));
     futureResult = packagedTask->get_future();

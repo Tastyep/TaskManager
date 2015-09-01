@@ -152,7 +152,6 @@ void schedule4(ThreadManager& manager) {
 
   Task task([&stop, &scheduler]() {
     unsigned int i = 1;
-    std::cout << "task launched" << std::endl;
     while (!stop) {
       auto future = scheduler.runIn([i]() {
         return "";//std::to_string(i) + " second elapsed";
@@ -164,6 +163,7 @@ void schedule4(ThreadManager& manager) {
   task.setStopFunction([&stop]() {
     stop = true;
   });
+  std::cout << "before runAt" << std::endl;
   scheduler.runAt(task, std::chrono::steady_clock::now());
   //std::cout << "Press a key to continue" << std::endl;
   getchar();

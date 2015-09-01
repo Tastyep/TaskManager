@@ -15,13 +15,15 @@ public:
   function(nullptr),
   stopFunction(nullptr),
   pauseFunction(nullptr),
-  unpauseFunction(nullptr) {}
+  unpauseFunction(nullptr) {
+  }
 
   Task(std::nullptr_t nullp) :
   function(nullptr),
   stopFunction(nullptr),
   pauseFunction(nullptr),
-  unpauseFunction(nullptr) {}
+  unpauseFunction(nullptr) {
+  }
 
   explicit Task(const std::function<void ()>& func) :
   function(func) {} // no need for future
@@ -31,16 +33,22 @@ public:
   stopFunction(task.stopFunction),
   pauseFunction(task.pauseFunction),
   unpauseFunction(task.unpauseFunction),
-  callbacks(task.callbacks) {}
+  callbacks(task.callbacks) {
+  }
 
-  virtual ~Task() = default;
+  Task(Task&& other)
+  {
+    std::cout << "&&: " << this << " " << &other << " " << (stopFunction != nullptr) << " " << (other.stopFunction != nullptr) << std::endl;
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = std::move(other.callbacks);
 
-  void operator()() {
-    this->function();
-    std::lock_guard<std::mutex> lock_guard(callbackMutex);
-    for (auto callback: this->callbacks) {
-      callback();
-    }
+    other.function = nullptr;
+    other.stopFunction = nullptr;
+    other.pauseFunction = nullptr;
+    other.unpauseFunction = nullptr;
   }
 
   Task& operator=(const Task& other) {
@@ -50,6 +58,35 @@ public:
     this->unpauseFunction = other.unpauseFunction;
     this->callbacks = other.callbacks;
     return *this;
+  }
+
+  Task& operator=(Task&& other)
+  {
+    if (this == &other)
+      return *this;
+      std::cout << "=&&: " << this << " " << &other << " " << (stopFunction != nullptr) << " " << (other.stopFunction != nullptr) << std::endl;
+
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = std::move(other.callbacks);
+
+    other.function = nullptr;
+    other.stopFunction = nullptr;
+    other.pauseFunction = nullptr;
+    other.unpauseFunction = nullptr;
+    return *this;
+  }
+
+  virtual ~Task() = default;
+
+  void operator()() {
+    this->function();
+    std::lock_guard<std::mutex> lock_guard(callbackMutex);
+    for (auto callback: this->callbacks) {
+      callback();
+    }
   }
 
   Task& operator=(const std::function<void ()> function) {
@@ -96,6 +133,7 @@ public:
   void setStopFunction(F&& function, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
 
+    std::cout << "stopFunction" << std::endl;
     this->stopFunction = [this, task]() {
       task();
     };
@@ -123,9 +161,10 @@ public:
     return this->stopFunction;
   }
 
-  void stop() {
-    if (stopFunction)
-      stopFunction();
+  void stop() const {
+    std::cout << "STOP: " << (stopFunction != nullptr) << std::endl;
+    // if (stopFunction)
+    //   stopFunction();
   };
 
   void pause() {
