@@ -15,7 +15,14 @@ public:
   ~Worker();
 
   void start(std::condition_variable& cv,
-            std::mutex& condvarMutex);
+             std::mutex& condvarMutex);
+
+  void start(const Task &task) {
+    if (this->running.load() == true)
+      throw std::runtime_error("Can't start an already running worker");
+    this->running.store(true);
+    this->thread = std::thread(task);
+  }
   void stop();
   void stopTask();
   void pauseTask();

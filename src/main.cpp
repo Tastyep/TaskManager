@@ -1,6 +1,7 @@
 #include <chrono>
 #include <iostream>
 #include "ThreadPool.hh"
+#include "Scheduler.hh"
 #include <unistd.h>
 
 void test1(ThreadPool& tp) {
@@ -108,9 +109,98 @@ void test5(ThreadPool& tp) {
   }
 }
 
+void schedule1(Scheduler& scheduler) {
+  auto future1 = scheduler.runAt([]() {
+                  return "Done1";
+                }, std::chrono::steady_clock::now() + std::chrono::milliseconds(200));
+  auto future2 = scheduler.runIn([]() {
+                  return "Done2";
+                }, std::chrono::milliseconds(200));
+
+  std::cout << future1.get() << std::endl;
+  std::cout << future2.get() << std::endl;
+  std::cout << "Schedule1 Done" << std::endl << std::endl;
+}
+
+void schedule2(Scheduler& scheduler) {
+  std::vector<std::future<int>> futures;
+
+  for (int i = 0; i < 10; ++i) {
+    futures.emplace_back(scheduler.runIn([i]() {
+                          return i;
+                        }, std::chrono::milliseconds(100 * i))
+                      );
+  }
+  for (auto& future : futures)
+    std::cout << future.get() << std::endl;
+  std::cout << "Schedule2 Done" << std::endl << std::endl;
+}
+
+void schedule3(Scheduler& scheduler) {
+  scheduler.runEvery([]() {
+                        std::cout << "Every second" << std::endl;
+                    }, std::chrono::milliseconds(1000));
+  scheduler.runIn([]() {
+      std::cout << "3 seconds elapsed" << std::endl;
+  }, std::chrono::seconds(3));
+  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::cout << "Schedule3 Done" << std::endl << std::endl;
+}
+
+void schedule4(ThreadManager& manager) {
+  Scheduler scheduler(2, manager);
+  bool stop = false;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  Task task([&stop, &scheduler]() {
+    unsigned int i = 1;
+    while (!stop) {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+      std::cout << std::to_string(i) + " second elapsed" << std::endl;
+      ++i;
+    }
+    std::cout << "schedule4 Done" << std::endl << std::endl;
+  });
+  task.setStopFunction([&stop]() {
+    stop = true;
+  });
+  // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  scheduler.runAt(task, std::chrono::steady_clock::now());
+  getchar();
+}
+
+// Not possible to add tasks in a scheduled task atm
+void schedule5(ThreadManager& manager) {
+  Scheduler scheduler(2, manager);
+  bool stop = false;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  Task task([&stop, &scheduler]() {
+    unsigned int i = 1;
+    while (!stop) {
+      auto future = scheduler.runIn([i]() {
+        return std::to_string(i) + " second elapsed";
+      }, std::chrono::milliseconds(60));
+      std::cout << future.get() << " " << (int)stop << std::endl;
+      ++i;
+    }
+  });
+  task.setStopFunction([&stop]() {
+    stop = true;
+  });
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  scheduler.runAt(task, std::chrono::steady_clock::now());
+  getchar();
+}
+
 int main(int argc, char const *argv[]) {
   ThreadManager manager(1);
   ThreadPool tp(2, manager);
+  Scheduler scheduler(2, manager);
+
+ std::cout << "------- ThreadPool -------" << std::endl;
 
   tp.start();
   test1(tp);
@@ -118,5 +208,12 @@ int main(int argc, char const *argv[]) {
   test3(tp);
   test4(tp);
   test5(tp);
+
+ std::cout << "------- Scheduler -------" << std::endl;
+
+  schedule1(scheduler);
+  schedule2(scheduler);
+  schedule3(scheduler);
+  schedule4(manager);
   return 0;
 }

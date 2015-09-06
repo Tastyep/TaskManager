@@ -3,10 +3,10 @@
 #include "ThreadPool.hh"
 
 ThreadPool::ThreadPool(unsigned int nbThreads,
-                ThreadManager& manager) :
+                      ThreadManager& manager) :
 threadRefCount(0)
 , manager(manager)
-, status(state::STOP)
+, status(state::START)
 , maxParallelism(nbThreads) {
     if (nbThreads == 0)
       throw std::invalid_argument("The ThreadPool must have at least a thread");
@@ -101,10 +101,8 @@ ThreadPool::addTask(Task& task) {
 
 void
 ThreadPool::decreaseRefCount() {
-  {
-    std::lock_guard<std::mutex> guardRef(this->refCountMutex);
-    --(this->threadRefCount);
-  }
+  std::lock_guard<std::mutex> guardRef(this->refCountMutex);
+  --(this->threadRefCount);
 }
 
 void

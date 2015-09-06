@@ -15,33 +15,38 @@ public:
   function(nullptr),
   stopFunction(nullptr),
   pauseFunction(nullptr),
-  unpauseFunction(nullptr) {}
+  unpauseFunction(nullptr) {
+  }
 
   Task(std::nullptr_t nullp) :
   function(nullptr),
   stopFunction(nullptr),
   pauseFunction(nullptr),
-  unpauseFunction(nullptr) {}
+  unpauseFunction(nullptr) {
+  }
 
   explicit Task(const std::function<void ()>& func) :
   function(func) {} // no need for future
 
   Task(const Task& task) :
-  function(
-  task.function),
+  function(task.function),
   stopFunction(task.stopFunction),
   pauseFunction(task.pauseFunction),
   unpauseFunction(task.unpauseFunction),
-  callbacks(task.callbacks) {}
+  callbacks(task.callbacks) {
+  }
 
-  ~Task() = default;
+  Task(Task&& other) {
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = std::move(other.callbacks);
 
-  void operator()() {
-    this->function();
-    std::lock_guard<std::mutex> lock_guard(callbackMutex);
-    for (auto callback: this->callbacks) {
-      callback();
-    }
+    other.function = nullptr;
+    other.stopFunction = nullptr;
+    other.pauseFunction = nullptr;
+    other.unpauseFunction = nullptr;
   }
 
   Task& operator=(const Task& other) {
@@ -51,6 +56,33 @@ public:
     this->unpauseFunction = other.unpauseFunction;
     this->callbacks = other.callbacks;
     return *this;
+  }
+
+  Task& operator=(Task&& other) {
+    if (this == &other)
+      return *this;
+
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = std::move(other.callbacks);
+
+    other.function = nullptr;
+    other.stopFunction = nullptr;
+    other.pauseFunction = nullptr;
+    other.unpauseFunction = nullptr;
+    return *this;
+  }
+
+  virtual ~Task() = default;
+
+  void operator()() {
+    this->function();
+    std::lock_guard<std::mutex> lock_guard(callbackMutex);
+    for (auto callback: this->callbacks) {
+      callback();
+    }
   }
 
   Task& operator=(const std::function<void ()> function) {
@@ -124,7 +156,7 @@ public:
     return this->stopFunction;
   }
 
-  void stop() {
+  void stop() const {
     if (stopFunction)
       stopFunction();
   };
