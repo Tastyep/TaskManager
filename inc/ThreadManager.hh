@@ -14,25 +14,25 @@
 
 class ThreadManager {
 public:
-  ThreadManager(unsigned int nbThread = std::thread::hardware_concurrency());
-  ~ThreadManager();
+    ThreadManager(unsigned int nbThread = std::thread::hardware_concurrency());
+    ~ThreadManager();
 
-  std::pair<bool, std::string> stop();
-  std::shared_ptr<Worker> getWorker();
-  void startTask(std::shared_ptr<Worker> worker, const Task& task);
-
-private:
-  unsigned int roundToNextPower(unsigned int nbThread) const;
-  void addNewThread();
+    std::pair<bool, std::string> stop();
+    std::shared_ptr<Worker> getWorker();
+    void startTask(std::shared_ptr<Worker> worker, const Task& task);
 
 private:
-  std::vector<std::shared_ptr<Worker>> workers;
-  std::mutex workersMutex;
+    unsigned int roundToNextPower(unsigned int nbThread) const;
+    void addNewThread();
 
-  mutable std::condition_variable cv;
-  mutable std::mutex condvarMutex;
+private:
+    std::vector<std::shared_ptr<Worker>> workers;
+    std::mutex workersMutex;
 
-  std::atomic_bool running;
+    mutable std::condition_variable cv;
+    mutable std::mutex condvarMutex;
+
+    std::atomic_bool running;
 };
 
 #endif /* end of include guard: THREADMANAGER_HH_ */
