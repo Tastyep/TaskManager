@@ -119,6 +119,7 @@ void schedule1(Scheduler& scheduler) {
 
   std::cout << future1.get() << std::endl;
   std::cout << future2.get() << std::endl;
+  std::cout << "Schedule1 Done" << std::endl << std::endl;
 }
 
 void schedule2(Scheduler& scheduler) {
@@ -132,6 +133,7 @@ void schedule2(Scheduler& scheduler) {
   }
   for (auto& future : futures)
     std::cout << future.get() << std::endl;
+  std::cout << "Schedule2 Done" << std::endl << std::endl;
 }
 
 void schedule3(Scheduler& scheduler) {
@@ -142,6 +144,7 @@ void schedule3(Scheduler& scheduler) {
       std::cout << "3 seconds elapsed" << std::endl;
   }, std::chrono::seconds(3));
   std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::cout << "Schedule3 Done" << std::endl << std::endl;
 }
 
 void schedule4(ThreadManager& manager) {
@@ -157,12 +160,12 @@ void schedule4(ThreadManager& manager) {
       std::cout << std::to_string(i) + " second elapsed" << std::endl;
       ++i;
     }
-    std::cout << "schedule4 Done" << std::endl;
+    std::cout << "schedule4 Done" << std::endl << std::endl;
   });
   task.setStopFunction([&stop]() {
     stop = true;
   });
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(10));
   scheduler.runAt(task, std::chrono::steady_clock::now());
   getchar();
 }
@@ -183,7 +186,6 @@ void schedule5(ThreadManager& manager) {
       std::cout << future.get() << " " << (int)stop << std::endl;
       ++i;
     }
-    std::cout << "leave" << std::endl;
   });
   task.setStopFunction([&stop]() {
     stop = true;
@@ -195,21 +197,23 @@ void schedule5(ThreadManager& manager) {
 
 int main(int argc, char const *argv[]) {
   ThreadManager manager(1);
-//  ThreadPool tp(2, manager);
+  ThreadPool tp(2, manager);
   Scheduler scheduler(2, manager);
 
-  // tp.start();
-  // test1(tp);
-  // test2(tp);
-  // test3(tp);
-  // test4(tp);
-  // test5(tp);
+ std::cout << "------- ThreadPool -------" << std::endl;
 
-//  std::cout << "------- Scheduler -------" << std::endl;
+  tp.start();
+  test1(tp);
+  test2(tp);
+  test3(tp);
+  test4(tp);
+  test5(tp);
 
-  // schedule1(scheduler);
-  // schedule2(scheduler);
-//  schedule3(scheduler);
+ std::cout << "------- Scheduler -------" << std::endl;
+
+  schedule1(scheduler);
+  schedule2(scheduler);
+  schedule3(scheduler);
   schedule4(manager);
   return 0;
 }
