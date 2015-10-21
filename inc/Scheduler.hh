@@ -15,9 +15,8 @@ public:
     template <class F,
               class... Args,
               class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
-    auto runAt(F&& function,
-               const std::chrono::steady_clock::time_point& timePoint,
-               Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+    auto runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
+        -> std::future<typename std::result_of<F(Args...)>::type> {
         using return_type = typename std::result_of<F(Args...)>::type;
         std::future<return_type> futureResult;
 
@@ -32,9 +31,8 @@ public:
     template <class F,
               class... Args,
               class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
-    auto runIn(F&& function,
-               const std::chrono::steady_clock::duration& duration,
-               Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+    auto runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
+        -> std::future<typename std::result_of<F(Args...)>::type> {
         using return_type = typename std::result_of<F(Args...)>::type;
         std::future<return_type> futureResult;
 
@@ -100,7 +98,6 @@ private:
 
     std::mutex stopMutex;
 };
-
 }
 
 #endif /* end of include guard: SCHEDULER_HH_ */

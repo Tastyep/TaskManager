@@ -42,7 +42,6 @@ private:
     std::atomic_bool running;
     std::atomic_bool reserved;
 };
-
 }
 
 #endif /* end of include guard: WORKER_HH_ */

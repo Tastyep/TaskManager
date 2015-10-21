@@ -234,5 +234,4 @@ Scheduler::stop() {
     }
     this->worker.waitStopped();
 }
-
 }

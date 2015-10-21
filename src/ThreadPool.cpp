@@ -63,8 +63,10 @@ ThreadPool::stop() {
         for (auto& worker : this->workers) { worker->stopTask(); }
     }
     do {
-        std::lock_guard<std::mutex> guardWorker(this->workerMutex);
-        waitCondition = (not this->workers.empty() || not this->taskContainer.empty());
+        {
+            std::lock_guard<std::mutex> guardWorker(this->workerMutex);
+            waitCondition = (not this->workers.empty() || not this->taskContainer.empty());
+        }
         if (waitCondition) std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } while (waitCondition);
     return std::make_pair(true, "");
@@ -129,5 +131,4 @@ ThreadPool::removeWorkerRef(std::shared_ptr<Worker> worker) {
                                        [worker](const auto& w) { return w == worker; }),
                         this->workers.end());
 }
-
 }

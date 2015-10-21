@@ -78,5 +78,4 @@ ThreadManager::stop() {
     this->cv.notify_all();
     return std::make_pair(true, "");
 };
-
 }

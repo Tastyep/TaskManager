@@ -24,8 +24,8 @@ public:
     void addTask(Task& task);
 
     template <class F, class... Args>
-    auto addTask(F&& function,
-                 Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+    auto addTask(F&& function, Args&&... args)
+        -> std::future<typename std::result_of<F(Args...)>::type> {
         using return_type = typename std::result_of<F(Args...)>::type;
         std::future<return_type> futureResult;
 
@@ -64,7 +64,6 @@ private:
     std::vector<std::shared_ptr<Worker>> workers;
     std::mutex workerMutex;
 };
-
 }
 
 #endif /* end of include guard: THREADPOOL_HH_ */

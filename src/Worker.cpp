@@ -93,5 +93,4 @@ bool
 Worker::isReserved() {
     return this->reserved.load();
 }
-
 }

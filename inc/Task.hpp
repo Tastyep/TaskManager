@@ -90,8 +90,8 @@ public:
     }
 
     template <class F, class... Args>
-    auto assign(F&& function,
-                Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+    auto assign(F&& function, Args&&... args)
+        -> std::future<typename std::result_of<F(Args...)>::type> {
         using return_type = typename std::result_of<F(Args...)>::type;
         auto task = std::make_shared<std::packaged_task<return_type()>>(
             std::bind(std::forward<F>(function), std::forward<Args>(args)...));
@@ -164,7 +164,6 @@ private:
     std::vector<std::function<void()>> callbacks;
     std::mutex callbackMutex;
 };
-
 }
 
 #endif /* end of include guard: TASK_HPP_BASE_ */

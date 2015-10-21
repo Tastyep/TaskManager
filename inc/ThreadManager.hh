@@ -36,7 +36,6 @@ private:
 
     std::atomic_bool running;
 };
-
 }
 
 #endif /* end of include guard: THREADMANAGER_HH_ */
