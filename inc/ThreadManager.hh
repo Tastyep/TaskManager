@@ -12,6 +12,8 @@
 #include <iostream>
 #include "Worker.hh"
 
+namespace TaskManager {
+
 class ThreadManager {
 public:
     ThreadManager(unsigned int nbThread = std::thread::hardware_concurrency());
@@ -34,5 +36,7 @@ private:
 
     std::atomic_bool running;
 };
+
+}
 
 #endif /* end of include guard: THREADMANAGER_HH_ */

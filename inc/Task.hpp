@@ -9,6 +9,8 @@
 
 #include <iostream> // debug
 
+namespace TaskManager {
+
 class Task {
 public:
     Task()
@@ -162,5 +164,7 @@ private:
     std::vector<std::function<void()>> callbacks;
     std::mutex callbackMutex;
 };
+
+}
 
 #endif /* end of include guard: TASK_HPP_BASE_ */

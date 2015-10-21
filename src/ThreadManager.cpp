@@ -2,6 +2,8 @@
 #include <iostream>
 #include <chrono>
 
+namespace TaskManager {
+
 ThreadManager::ThreadManager(unsigned int nbThread) : running(true) {
     for (unsigned int i = 0; i < nbThread; ++i) { this->addNewThread(); }
 }
@@ -76,3 +78,5 @@ ThreadManager::stop() {
     this->cv.notify_all();
     return std::make_pair(true, "");
 };
+
+}

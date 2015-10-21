@@ -4,6 +4,8 @@
 #include "ThreadManager.hh"
 #include "Task.hpp"
 
+namespace TaskManager {
+
 class Scheduler {
 public:
     Scheduler(unsigned int nbThreads, ThreadManager& manager);
@@ -98,5 +100,7 @@ private:
 
     std::mutex stopMutex;
 };
+
+}
 
 #endif /* end of include guard: SCHEDULER_HH_ */

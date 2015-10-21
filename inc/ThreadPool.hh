@@ -6,6 +6,8 @@
 
 #include "ThreadManager.hh"
 
+namespace TaskManager {
+
 class ThreadPool {
 public:
     ThreadPool(unsigned int nbThreads, ThreadManager& manager);
@@ -62,5 +64,7 @@ private:
     std::vector<std::shared_ptr<Worker>> workers;
     std::mutex workerMutex;
 };
+
+}
 
 #endif /* end of include guard: THREADPOOL_HH_ */

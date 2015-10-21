@@ -2,6 +2,8 @@
 
 #include <iostream> //debug
 
+namespace TaskManager {
+
 Worker::Worker() : thread(), task(nullptr), running(false), reserved(false) {}
 
 Worker::~Worker() {
@@ -90,4 +92,6 @@ Worker::setReserved(bool status) {
 bool
 Worker::isReserved() {
     return this->reserved.load();
+}
+
 }

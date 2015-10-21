@@ -2,6 +2,8 @@
 
 #include "ThreadPool.hh"
 
+namespace TaskManager {
+
 ThreadPool::ThreadPool(unsigned int nbThreads, ThreadManager& manager)
 : threadRefCount(0), manager(manager), status(state::START), maxParallelism(nbThreads) {
     if (nbThreads == 0) throw std::invalid_argument("The ThreadPool must have at least a thread");
@@ -126,4 +128,6 @@ ThreadPool::removeWorkerRef(std::shared_ptr<Worker> worker) {
                                        this->workers.end(),
                                        [worker](const auto& w) { return w == worker; }),
                         this->workers.end());
+}
+
 }

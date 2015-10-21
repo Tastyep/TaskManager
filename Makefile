@@ -22,6 +22,8 @@ INCCOMP	= -I$(INCDIR)
 
 CXXFLAGS = -std=c++1y -g
 
+LDFLAGS += -lpthread
+
 dummy	:= 	$(shell test -d $(OBJDIR) || mkdir $(OBJDIR))
 
 $(OBJDIR)%.o:	$(SRCDIR)%.cpp

@@ -1,6 +1,10 @@
 #include <tuple>
 #include <iterator>
+#include <algorithm>
+
 #include "Scheduler.hh"
+
+namespace TaskManager {
 
 Scheduler::Scheduler(unsigned int nbThreads, ThreadManager& manager)
 : threadRefCount(0)
@@ -229,4 +233,6 @@ Scheduler::stop() {
         this->cv.notify_all();
     }
     this->worker.waitStopped();
+}
+
 }
