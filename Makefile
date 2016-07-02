@@ -20,7 +20,7 @@ OBJS	= $(addprefix $(OBJDIR), $(SRCS:.cpp=.o))
 
 INCCOMP	= -I$(INCDIR)
 
-CXXFLAGS = -std=c++1y -g
+CXXFLAGS = -std=c++14 -pedantic -Wall -Wextra -Werror -g
 
 LDFLAGS += -lpthread
 

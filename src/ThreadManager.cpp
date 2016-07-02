@@ -77,5 +77,5 @@ ThreadManager::stop() {
     for (auto& worker : this->workers) worker->stop();
     this->cv.notify_all();
     return std::make_pair(true, "");
-};
+}
 }

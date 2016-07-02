@@ -16,7 +16,7 @@ public:
     Task()
     : function(nullptr), stopFunction(nullptr), pauseFunction(nullptr), unpauseFunction(nullptr) {}
 
-    Task(std::nullptr_t nullp)
+    Task(std::nullptr_t)
     : function(nullptr), stopFunction(nullptr), pauseFunction(nullptr), unpauseFunction(nullptr) {}
 
     explicit Task(const std::function<void()>& func) : function(func) {} // no need for future

@@ -188,7 +188,7 @@ schedule5(TaskManager::ThreadManager& manager) {
 }
 
 int
-main(int argc, char const* argv[]) {
+main(int /*argc*/, char const* /*argv*/[]) {
     TaskManager::ThreadManager manager(1);
     TaskManager::ThreadPool tp(2, manager);
     TaskManager::Scheduler scheduler(2, manager);

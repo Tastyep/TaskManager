@@ -4,12 +4,12 @@
 
 namespace TaskManager {
 
-Worker::Worker() : thread(), task(nullptr), running(false), reserved(false) {}
+Worker::Worker() : task(nullptr), thread(), running(false), reserved(false) {}
 
 Worker::~Worker() {
     if (this->running.load()) this->stop();
     this->waitStopped();
-};
+}
 
 void
 Worker::start(std::condition_variable& cv, std::mutex& condvarMutex) {
