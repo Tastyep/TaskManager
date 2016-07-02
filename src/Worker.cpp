@@ -4,7 +4,7 @@
 
 namespace TaskManager {
 
-Worker::Worker() : thread(), task(nullptr), running(false), reserved(false) {}
+Worker::Worker() : task(nullptr), thread(), running(false), reserved(false) {}
 
 Worker::~Worker() {
     if (this->running.load()) this->stop();
