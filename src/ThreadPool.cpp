@@ -70,7 +70,7 @@ ThreadPool::stop() {
         if (waitCondition) std::this_thread::sleep_for(std::chrono::milliseconds(100));
     } while (waitCondition);
     return std::make_pair(true, "");
-};
+}
 
 void
 ThreadPool::resize(unsigned int maxParallelism) {
