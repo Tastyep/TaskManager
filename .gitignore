@@ -28,6 +28,5 @@
 *.app
 *~
 
-q.hpp
-*a.out*
-TaskManager
+# Build directory
+build/

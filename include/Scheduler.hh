@@ -1,8 +1,8 @@
 #ifndef SCHEDULER_HH_
 #define SCHEDULER_HH_
 
-#include "ThreadManager.hh"
 #include "Task.hpp"
+#include "ThreadManager.hh"
 
 namespace TaskManager {
 
@@ -15,7 +15,8 @@ public:
     template <class F,
               class... Args,
               class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
-    auto runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
+    auto
+    runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type> {
         using return_type = typename std::result_of<F(Args...)>::type;
         std::future<return_type> futureResult;
@@ -31,7 +32,8 @@ public:
     template <class F,
               class... Args,
               class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
-    auto runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
+    auto
+    runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type> {
         using return_type = typename std::result_of<F(Args...)>::type;
         std::future<return_type> futureResult;
@@ -88,7 +90,8 @@ private:
 
     std::vector<std::tuple<Task,
                            std::chrono::steady_clock::time_point,
-                           std::chrono::steady_clock::duration>> constantTasks;
+                           std::chrono::steady_clock::duration>>
+        constantTasks;
     std::vector<std::pair<Task, std::chrono::steady_clock::time_point>> uniqueTasks;
     std::mutex utaskMutex;
     std::mutex ctaskMutex;
@@ -98,6 +101,6 @@ private:
 
     std::mutex stopMutex;
 };
-}
+} // namespace TaskManager
 
 #endif /* end of include guard: SCHEDULER_HH_ */
