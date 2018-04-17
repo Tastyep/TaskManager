@@ -7,99 +7,89 @@
 namespace TaskManager {
 
 class Scheduler {
-public:
-    Scheduler(unsigned int nbThreads, ThreadManager& manager);
+ public:
+  Scheduler(unsigned int nbThreads, ThreadManager& manager);
 
-    virtual ~Scheduler();
+  virtual ~Scheduler();
 
-    template <class F,
-              class... Args,
-              class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
-    auto
-    runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type> {
-        using return_type = typename std::result_of<F(Args...)>::type;
-        std::future<return_type> futureResult;
+  template <class F, class... Args, class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
+  auto runAt(F&& function, const std::chrono::steady_clock::time_point& timePoint, Args&&... args)
+    -> std::future<typename std::result_of<F(Args...)>::type> {
+    using return_type = typename std::result_of<F(Args...)>::type;
+    std::future<return_type> futureResult;
 
-        auto packagedTask = std::make_shared<std::packaged_task<return_type()>>(
-            std::bind(std::forward<F>(function), std::forward<Args>(args)...));
-        futureResult = packagedTask->get_future();
+    auto packagedTask = std::make_shared<std::packaged_task<return_type()>>(
+      std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+    futureResult = packagedTask->get_future();
 
-        this->addTask(Task([this, packagedTask]() { (*packagedTask)(); }), timePoint);
-        return futureResult;
-    }
+    this->addTask(Task([this, packagedTask]() { (*packagedTask)(); }), timePoint);
+    return futureResult;
+  }
 
-    template <class F,
-              class... Args,
-              class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
-    auto
-    runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type> {
-        using return_type = typename std::result_of<F(Args...)>::type;
-        std::future<return_type> futureResult;
+  template <class F, class... Args, class = std::enable_if_t<!std::is_same<std::decay_t<F>, Task>{}>>
+  auto runIn(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args)
+    -> std::future<typename std::result_of<F(Args...)>::type> {
+    using return_type = typename std::result_of<F(Args...)>::type;
+    std::future<return_type> futureResult;
 
-        auto packagedTask = std::make_shared<std::packaged_task<return_type()>>(
-            std::bind(std::forward<F>(function), std::forward<Args>(args)...));
-        futureResult = packagedTask->get_future();
+    auto packagedTask = std::make_shared<std::packaged_task<return_type()>>(
+      std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+    futureResult = packagedTask->get_future();
 
-        this->addTask(Task([this, packagedTask]() { (*packagedTask)(); }),
-                      std::chrono::steady_clock::now() + duration);
-        return futureResult;
-    }
+    this->addTask(Task([this, packagedTask]() { (*packagedTask)(); }), std::chrono::steady_clock::now() + duration);
+    return futureResult;
+  }
 
-    void runAt(const Task& task, const std::chrono::steady_clock::time_point& timePoint);
-    void runIn(const Task& task, const std::chrono::steady_clock::duration& duration);
-    void runEvery(const Task& task, const std::chrono::steady_clock::duration& duration);
+  void runAt(const Task& task, const std::chrono::steady_clock::time_point& timePoint);
+  void runIn(const Task& task, const std::chrono::steady_clock::duration& duration);
+  void runEvery(const Task& task, const std::chrono::steady_clock::duration& duration);
 
-    template <class F, class... Args>
-    void
-    runEvery(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args) {
-        auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
-        auto cuNow = std::chrono::steady_clock::now() + duration;
-        this->addTask(Task([task]() { task(); }), cuNow, duration);
-    }
+  template <class F, class... Args>
+  void runEvery(F&& function, const std::chrono::steady_clock::duration& duration, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+    auto cuNow = std::chrono::steady_clock::now() + duration;
+    this->addTask(Task([task]() { task(); }), cuNow, duration);
+  }
 
-public:
-    std::pair<bool, std::string> pause();
-    std::pair<bool, std::string> unpause();
+ public:
+  std::pair<bool, std::string> pause();
+  std::pair<bool, std::string> unpause();
 
-private:
-    void stop();
-    void mainFunction();
-    std::pair<Task, std::chrono::steady_clock::time_point> getHighestPriorityTask();
-    void decreaseRefCount();
-    void removeWorkerRef(std::shared_ptr<Worker> worker);
-    void addTask(const Task& task, const std::chrono::steady_clock::time_point& timePoint);
-    void addTask(const Task& task,
-                 const std::chrono::steady_clock::time_point& timePoint,
-                 const std::chrono::steady_clock::duration& duration);
+ private:
+  void stop();
+  void mainFunction();
+  std::pair<Task, std::chrono::steady_clock::time_point> getHighestPriorityTask();
+  void decreaseRefCount();
+  void removeWorkerRef(std::shared_ptr<Worker> worker);
+  void addTask(const Task& task, const std::chrono::steady_clock::time_point& timePoint);
+  void addTask(const Task& task,
+               const std::chrono::steady_clock::time_point& timePoint,
+               const std::chrono::steady_clock::duration& duration);
 
-private:
-    Worker worker;
+ private:
+  Worker worker;
 
-    unsigned int threadRefCount;
-    std::mutex refCountMutex;
+  unsigned int threadRefCount;
+  std::mutex refCountMutex;
 
-    unsigned int maxParallelism;
-    ThreadManager& manager;
-    std::atomic<state> status;
-    std::atomic_bool running;
+  unsigned int maxParallelism;
+  ThreadManager& manager;
+  std::atomic<state> status;
+  std::atomic_bool running;
 
-    std::condition_variable cv;
-    std::mutex condvarMutex;
+  std::condition_variable cv;
+  std::mutex condvarMutex;
 
-    std::vector<std::tuple<Task,
-                           std::chrono::steady_clock::time_point,
-                           std::chrono::steady_clock::duration>>
-        constantTasks;
-    std::vector<std::pair<Task, std::chrono::steady_clock::time_point>> uniqueTasks;
-    std::mutex utaskMutex;
-    std::mutex ctaskMutex;
+  std::vector<std::tuple<Task, std::chrono::steady_clock::time_point, std::chrono::steady_clock::duration>>
+    constantTasks;
+  std::vector<std::pair<Task, std::chrono::steady_clock::time_point>> uniqueTasks;
+  std::mutex utaskMutex;
+  std::mutex ctaskMutex;
 
-    std::vector<std::shared_ptr<Worker>> workers;
-    std::mutex workerMutex;
+  std::vector<std::shared_ptr<Worker>> workers;
+  std::mutex workerMutex;
 
-    std::mutex stopMutex;
+  std::mutex stopMutex;
 };
 } // namespace TaskManager
 

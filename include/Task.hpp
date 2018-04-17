@@ -1,10 +1,10 @@
 #ifndef TASK_HPP_BASE_
 #define TASK_HPP_BASE_
 
-#include <future>
-#include <functional>
-#include <mutex>
 #include <atomic>
+#include <functional>
+#include <future>
+#include <mutex>
 #include <vector>
 
 #include <iostream> // debug
@@ -12,158 +12,162 @@
 namespace TaskManager {
 
 class Task {
-public:
-    Task()
-    : function(nullptr), stopFunction(nullptr), pauseFunction(nullptr), unpauseFunction(nullptr) {}
+ public:
+  Task()
+    : function(nullptr)
+    , stopFunction(nullptr)
+    , pauseFunction(nullptr)
+    , unpauseFunction(nullptr) {}
 
-    Task(std::nullptr_t)
-    : function(nullptr), stopFunction(nullptr), pauseFunction(nullptr), unpauseFunction(nullptr) {}
+  Task(std::nullptr_t)
+    : function(nullptr)
+    , stopFunction(nullptr)
+    , pauseFunction(nullptr)
+    , unpauseFunction(nullptr) {}
 
-    explicit Task(const std::function<void()>& func) : function(func) {} // no need for future
+  explicit Task(const std::function<void()>& func)
+    : function(func) {} // no need for future
 
-    Task(const Task& task)
+  Task(const Task& task)
     : function(task.function)
     , stopFunction(task.stopFunction)
     , pauseFunction(task.pauseFunction)
     , unpauseFunction(task.unpauseFunction)
     , callbacks(task.callbacks) {}
 
-    Task(Task&& other) {
-        this->function = other.function;
-        this->stopFunction = other.stopFunction;
-        this->pauseFunction = other.pauseFunction;
-        this->unpauseFunction = other.unpauseFunction;
-        this->callbacks = std::move(other.callbacks);
+  Task(Task&& other) {
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = std::move(other.callbacks);
 
-        other.function = nullptr;
-        other.stopFunction = nullptr;
-        other.pauseFunction = nullptr;
-        other.unpauseFunction = nullptr;
+    other.function = nullptr;
+    other.stopFunction = nullptr;
+    other.pauseFunction = nullptr;
+    other.unpauseFunction = nullptr;
+  }
+
+  Task& operator=(const Task& other) {
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = other.callbacks;
+    return *this;
+  }
+
+  Task& operator=(Task&& other) {
+    if (this == &other)
+      return *this;
+
+    this->function = other.function;
+    this->stopFunction = other.stopFunction;
+    this->pauseFunction = other.pauseFunction;
+    this->unpauseFunction = other.unpauseFunction;
+    this->callbacks = std::move(other.callbacks);
+
+    other.function = nullptr;
+    other.stopFunction = nullptr;
+    other.pauseFunction = nullptr;
+    other.unpauseFunction = nullptr;
+    return *this;
+  }
+
+  virtual ~Task() = default;
+
+  void operator()() {
+    this->function();
+    std::lock_guard<std::mutex> lock_guard(callbackMutex);
+    for (auto callback : this->callbacks) {
+      callback();
     }
+  }
 
-    Task& operator=(const Task& other) {
-        this->function = other.function;
-        this->stopFunction = other.stopFunction;
-        this->pauseFunction = other.pauseFunction;
-        this->unpauseFunction = other.unpauseFunction;
-        this->callbacks = other.callbacks;
-        return *this;
-    }
+  Task& operator=(const std::function<void()> function) {
+    this->function = function;
+    return *this;
+  }
 
-    Task& operator=(Task&& other) {
-        if (this == &other) return *this;
+  template <typename T>
+  bool operator==(const T& var) {
+    return (function == var);
+  }
 
-        this->function = other.function;
-        this->stopFunction = other.stopFunction;
-        this->pauseFunction = other.pauseFunction;
-        this->unpauseFunction = other.unpauseFunction;
-        this->callbacks = std::move(other.callbacks);
+  template <typename T>
+  bool operator!=(const T& var) {
+    return (function != var);
+  }
 
-        other.function = nullptr;
-        other.stopFunction = nullptr;
-        other.pauseFunction = nullptr;
-        other.unpauseFunction = nullptr;
-        return *this;
-    }
+  template <class F, class... Args>
+  auto assign(F&& function, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+    using return_type = typename std::result_of<F(Args...)>::type;
+    auto task = std::make_shared<std::packaged_task<return_type()>>(
+      std::bind(std::forward<F>(function), std::forward<Args>(args)...));
+    auto future = task->get_future();
 
-    virtual ~Task() = default;
+    this->function = [this, task]() { (*task)(); };
+    return future;
+  }
 
-    void operator()() {
-        this->function();
-        std::lock_guard<std::mutex> lock_guard(callbackMutex);
-        for (auto callback : this->callbacks) { callback(); }
-    }
+  template <class F, class... Args>
+  void addCallback(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+    auto wrappedTask = [this, task]() { task(); };
 
-    Task& operator=(const std::function<void()> function) {
-        this->function = function;
-        return *this;
-    }
+    std::lock_guard<std::mutex> lock_guard(callbackMutex);
+    callbacks.emplace_back(wrappedTask);
+  }
 
-    template <typename T>
-    bool operator==(const T& var) {
-        return (function == var);
-    }
+  template <class F, class... Args>
+  void setStopFunction(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
 
-    template <typename T>
-    bool operator!=(const T& var) {
-        return (function != var);
-    }
+    this->stopFunction = [this, task]() { task(); };
+  }
 
-    template <class F, class... Args>
-    auto assign(F&& function, Args&&... args)
-        -> std::future<typename std::result_of<F(Args...)>::type> {
-        using return_type = typename std::result_of<F(Args...)>::type;
-        auto task = std::make_shared<std::packaged_task<return_type()>>(
-            std::bind(std::forward<F>(function), std::forward<Args>(args)...));
-        auto future = task->get_future();
+  template <class F, class... Args>
+  void setPauseFunction(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
 
-        this->function = [this, task]() { (*task)(); };
-        return future;
-    }
+    this->pauseFunction = [this, task]() { task(); };
+  }
 
-    template <class F, class... Args>
-    void
-    addCallback(F&& function, Args&&... args) {
-        auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
-        auto wrappedTask = [this, task]() { task(); };
+  template <class F, class... Args>
+  void setUnpauseFunction(F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
 
-        std::lock_guard<std::mutex> lock_guard(callbackMutex);
-        callbacks.emplace_back(wrappedTask);
-    }
+    this->unpauseFunction = [this, task]() { task(); };
+  }
 
-    template <class F, class... Args>
-    void
-    setStopFunction(F&& function, Args&&... args) {
-        auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+  const std::function<void()>& getStopFunction() {
+    return this->stopFunction;
+  }
 
-        this->stopFunction = [this, task]() { task(); };
-    }
+  void stop() const {
+    if (stopFunction)
+      stopFunction();
+  };
 
-    template <class F, class... Args>
-    void
-    setPauseFunction(F&& function, Args&&... args) {
-        auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+  void pause() {
+    if (pauseFunction)
+      pauseFunction();
+  };
 
-        this->pauseFunction = [this, task]() { task(); };
-    }
+  void unpause() {
+    if (unpauseFunction)
+      unpauseFunction();
+  }
 
-    template <class F, class... Args>
-    void
-    setUnpauseFunction(F&& function, Args&&... args) {
-        auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+ private:
+  std::function<void()> function;
+  std::function<void()> stopFunction;
+  std::function<void()> pauseFunction;
+  std::function<void()> unpauseFunction;
 
-        this->unpauseFunction = [this, task]() { task(); };
-    }
-
-    const std::function<void()>&
-    getStopFunction() {
-        return this->stopFunction;
-    }
-
-    void
-    stop() const {
-        if (stopFunction) stopFunction();
-    };
-
-    void
-    pause() {
-        if (pauseFunction) pauseFunction();
-    };
-
-    void
-    unpause() {
-        if (unpauseFunction) unpauseFunction();
-    }
-
-private:
-    std::function<void()> function;
-    std::function<void()> stopFunction;
-    std::function<void()> pauseFunction;
-    std::function<void()> unpauseFunction;
-
-    std::vector<std::function<void()>> callbacks;
-    std::mutex callbackMutex;
+  std::vector<std::function<void()>> callbacks;
+  std::mutex callbackMutex;
 };
-}
+} // namespace TaskManager
 
 #endif /* end of include guard: TASK_HPP_BASE_ */
