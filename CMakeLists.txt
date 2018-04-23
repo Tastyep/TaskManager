@@ -36,13 +36,14 @@ include_directories (${PROJECT_SOURCE_DIR}/${INCLUDE_DIR})
 
 add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE_FILES})
 
-if(ASYNC_TASK_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+if(TASK_MANAGER_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   include(EnableClangTidy)
   enable_clangtidy(SOURCES "${LIB_SOURCE_FILES}")
 endif()
 
-if(ASYNC_TASK_BUILD_TESTS)
+if(TASK_MANAGER_BUILD_TESTS)
   message(STATUS "Configuring target '${TESTER_NAME}'")
+  include(EnableTests)
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${LIB_DIR})
