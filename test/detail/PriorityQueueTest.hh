@@ -28,6 +28,19 @@ class DetailPriorityQueue : public Test {
 
     return vec;
   }
+
+ protected:
+  struct Entity {
+    int id;
+    int value;
+
+    bool operator==(const Entity& other) const {
+      return id == other.id;
+    }
+    bool operator<(const Entity& other) const {
+      return value < other.value;
+    }
+  };
 };
 
 } /* namespace Detail */

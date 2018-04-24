@@ -15,5 +15,22 @@ TEST_F(DetailPriorityQueue, Erase) {
   EXPECT_THAT(this->makeVector(queue), ElementsAreArray({ 5, 3 }));
 }
 
+TEST_F(DetailPriorityQueue, Update) {
+  PriorityQueue<Entity> queue;
+
+  for (auto i : { 5, 4, 3, 2 }) {
+    queue.push(Entity{ i, i });
+  }
+
+  queue.update(Entity{ 4, 1 });
+  queue.update(Entity{ 2, 6 });
+  EXPECT_THAT(this->makeVector(queue), ElementsAreArray({
+                                         Entity{ 2, 6 },
+                                         Entity{ 5, 5 },
+                                         Entity{ 3, 3 },
+                                         Entity{ 4, 1 },
+                                       }));
+}
+
 } /* namespace Detail */
 } /* namespace Task */
