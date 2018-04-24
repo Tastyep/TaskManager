@@ -16,7 +16,7 @@ struct TimedTask {
   Timepoint timepoint;
 
   bool operator>(const TimedTask& other) const {
-    return timepoint < other.timepoint;
+    return timepoint > other.timepoint;
   }
   void operator()() {
     functor();
