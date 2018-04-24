@@ -11,6 +11,7 @@ BUILD_DIR="$ROOT_DIR/build"
 
 # Program options
 CXX="g++"
+CC="gcc"
 
 function usage() {
   echo -e "Usage:\n$0 [options]"
@@ -27,6 +28,7 @@ function usage() {
 
 function configure() {
   cmake \
+    -DCMAKE_C_COMPILER="$CC" \
     -DCMAKE_CXX_COMPILER="$CXX" \
     -DBUILD_TYPE="$TASK_MANAGER_BUILD_TYPE" \
     -DTASK_MANAGER_ENABLE_CLANGTIDY="$TASK_MANAGER_ENABLE_CLANGTIDY" \
@@ -41,6 +43,7 @@ while [[ $# -gt 0 ]]; do
     usage 0
     ;;
   -c | --clang)
+    CC="clang"
     CXX="clang++"
     shift
     ;;

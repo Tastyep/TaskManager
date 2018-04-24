@@ -8,12 +8,11 @@
 namespace Task {
 namespace Detail {
 
-template <typename T, typename Comp>
+template <typename T, typename Comp = std::less<>>
 class PriorityQueue : public std::priority_queue<T, std::vector<T>, Comp> {
  public:
-  template <typename Predicate>
-  bool erase(Predicate p) {
-    const auto it = std::find_if(this->c.begin(), this->c.end(), p);
+  bool erase(const T& e) {
+    const auto it = std::find(this->c.begin(), this->c.end(), e);
 
     if (it == this->c.end()) {
       return false;
@@ -24,14 +23,13 @@ class PriorityQueue : public std::priority_queue<T, std::vector<T>, Comp> {
     return true;
   }
 
-  template <typename Predicate>
-  bool update(const T& entity, Predicate p) {
-    const auto it = std::find_if(this->c.begin(), this->c.end(), p);
+  bool update(const T& e) {
+    const auto it = std::find(this->c.begin(), this->c.end(), e);
 
     if (it == this->c.end()) {
       return false;
     }
-    *it = entity;
+    *it = e;
     std::make_heap(this->c.begin(), this->c.end(), this->comp);
 
     return true;

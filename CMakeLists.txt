@@ -12,6 +12,7 @@ set(LIB_DIR lib)
 set(TEST_DIR test)
 set(IMPLEMENTATION_DIR detail)
 set(TESTER_NAME "${PROJECT_NAME}-tester")
+set(LIB_NAME ${PROJECT_NAME})
 
 set(CLANG_TIDY_CONFIG_SOURCE "${PROJECT_SOURCE_DIR}/.clang-tidy")
 
@@ -25,6 +26,8 @@ set(CMAKE_BUILD_TYPE ${BUILD_TYPE})
 
 message(STATUS "Building ${BUILD_TYPE} ${PROJECT_NAME}\n----------------------------")
 
+add_subdirectory(lib)
+
 # Set compiler flags
 include(CompilerFlags)
 
@@ -34,7 +37,7 @@ include(Sources)
 include_directories (${PROJECT_SOURCE_DIR})
 include_directories (${PROJECT_SOURCE_DIR}/${INCLUDE_DIR})
 
-add_library(${PROJECT_NAME} STATIC ${LIB_SOURCE_FILES})
+add_library(${LIB_NAME} STATIC ${LIB_SOURCE_FILES})
 
 if(TASK_MANAGER_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   include(EnableClangTidy)
@@ -46,5 +49,5 @@ if(TASK_MANAGER_BUILD_TESTS)
   include(EnableTests)
 endif()
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${LIB_DIR})
-install(FILES ${LIB_EXPOSED_HEADER_FILES} DESTINATION "${INCLUDE_DIR}/${PROJECT_NAME}")
+install(TARGETS ${LIB_NAME} DESTINATION ${LIB_DIR})
+install(FILES ${LIB_EXPOSED_HEADER_FILES} DESTINATION "${INCLUDE_DIR}/${LIB_NAME}")
