@@ -1,5 +1,5 @@
-#ifndef TASK_DETAIL_THREAD_POOL_HH
-#define TASK_DETAIL_THREAD_POOL_HH
+#ifndef TASK_DETAIL_THREADPOOL_HH
+#define TASK_DETAIL_THREADPOOL_HH
 
 #include <algorithm>
 #include <atomic>

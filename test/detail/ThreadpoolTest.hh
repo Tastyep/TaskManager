@@ -6,7 +6,7 @@
 
 #include <future>
 
-#include "detail/ThreadPool.hh"
+#include "detail/Threadpool.hh"
 
 #include "test/Async.hh"
 
@@ -15,11 +15,11 @@ using testing::Test;
 namespace Task {
 namespace Detail {
 
-class DetailThreadPool : public Test {
+class DetailThreadpool : public Test {
  public:
-  DetailThreadPool()
+  DetailThreadpool()
     : _threadpool(1) {}
-  ~DetailThreadPool() = default;
+  ~DetailThreadpool() = default;
 
   // Synchronize ensures that the scheduler blocks on the first task while we set up our test.
   void synchronize(const std::shared_ptr<std::promise<void>>& promise) {
