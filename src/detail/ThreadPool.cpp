@@ -37,7 +37,7 @@ void Threadpool::processTasks() {
       // The condvar can be unblocked by calling notify_xxx to signal that a new task has been added.
       // We should update the timeout if the new task has a higher priority.
       if (!_tasks.empty()) {
-        timeout = _tasks.top().timepoint;
+        timeout = _tasks.top().timepoint();
       }
       taskReady = _cv.wait_until(lock, timeout, [this] { //
         return !_tasks.empty() || _stopRequested;
@@ -48,7 +48,7 @@ void Threadpool::processTasks() {
       // This is done to avoid executing the most recent task when another one gets added.
       // Still, it is necessary to wake up the thread in order to update the timeout.
       // The container's size needs to be checked as the condvar is not garanted to obtain the lock first.
-      if (_tasks.empty() || _tasks.top().timepoint > Clock::now()) {
+      if (_tasks.empty() || _tasks.top().timepoint() > Clock::now()) {
         taskReady = false;
       }
     }
