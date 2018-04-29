@@ -22,12 +22,10 @@ TEST_F(ManagerTest, launchMultipleSequentially) {
 }
 
 TEST_F(ManagerTest, launchMultipleInParallel) {
-  size_t i = 0;
-
   this->setup(3, 3);
   for (size_t j = 0; j < 10; ++j) {
     this->addTasks({
-      [&i, j] { i = j; },
+      [] {},
     });
   }
   this->runTasks();
