@@ -6,7 +6,7 @@ namespace Detail {
 Threadpool::Threadpool(size_t threadCount) {
   _workers.reserve(threadCount);
   for (size_t i = 0; i < threadCount; ++i) {
-    _workers.emplace_back([this] { this->processTasks(); });
+    _workers.emplace_back(&Threadpool::processTasks, this);
   }
 }
 
@@ -14,7 +14,9 @@ Threadpool::~Threadpool() {
   _stopRequested = true;
   _cv.notify_all();
   for (auto& worker : _workers) {
-    worker.join();
+    if (worker.joinable()) {
+      worker.join();
+    }
   }
 }
 
