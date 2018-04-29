@@ -22,26 +22,28 @@ class DetailThreadpool : public Test {
   ~DetailThreadpool() = default;
 
   // Synchronize ensures that the scheduler blocks on the first task while we set up our test.
-  void synchronize(const std::shared_ptr<std::promise<void>>& promise) {
-    std::shared_future<void> future = promise->get_future();
+  std::shared_ptr<std::promise<void>> synchronize() {
+    auto lock = std::make_shared<std::promise<void>>();
+    std::shared_future<void> future = lock->get_future();
 
     auto task = [future = std::move(future)] {
       EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
     };
     _threadpool.schedule(TimedTask{ std::move(task), Clock::now() - std::chrono::hours(1) }); // arbitrary value.
+
+    return lock;
   }
 
   void schedule(const std::vector<std::chrono::milliseconds>& delays) {
     std::vector<std::future<void>> futures;
     std::vector<std::chrono::milliseconds> measuredDelay(delays.size());
     std::vector<size_t> ids;
-    auto lock = std::make_shared<std::promise<void>>();
+    const auto startTime = Clock::now();
 
-    this->synchronize(lock);
+    auto lock = this->synchronize();
     for (size_t i = 0; i < delays.size(); ++i) {
       auto promise = std::make_shared<std::promise<void>>();
       futures.push_back(promise->get_future());
-      const auto startTime = Clock::now();
 
       auto task = [&measuredDelay, &ids, promise = std::move(promise), startTime, i] {
         const auto takenTime = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - startTime);
@@ -50,7 +52,7 @@ class DetailThreadpool : public Test {
         ids.push_back(i);
         promise->set_value();
       };
-      _threadpool.schedule(TimedTask{ std::move(task), Clock::now() + delays[i] });
+      _threadpool.schedule(TimedTask{ std::move(task), startTime + delays[i] });
     }
 
     lock->set_value();

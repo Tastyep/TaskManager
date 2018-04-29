@@ -12,7 +12,11 @@ Threadpool::Threadpool(size_t threadCount) {
 
 Threadpool::~Threadpool() {
   _stopRequested = true;
-  _cv.notify_all();
+  {
+    std::lock_guard<std::mutex> guard(_mutex);
+
+    _cv.notify_all();
+  }
   for (auto& worker : _workers) {
     if (worker.joinable()) {
       worker.join();
