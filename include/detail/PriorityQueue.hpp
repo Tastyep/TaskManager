@@ -34,6 +34,10 @@ class PriorityQueue : public std::priority_queue<T, std::vector<T>, Comp> {
 
     return true;
   }
+
+  void clear() {
+    this->c.clear();
+  }
 };
 
 } /* namespace Detail */

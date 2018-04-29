@@ -32,5 +32,16 @@ TEST_F(DetailPriorityQueue, Update) {
                                        }));
 }
 
+TEST_F(DetailPriorityQueue, Clear) {
+  PriorityQueue<int> queue;
+
+  for (auto i : { 2, 3, 4, 5 }) {
+    queue.push(i);
+  }
+
+  queue.clear();
+  EXPECT_THAT(this->makeVector(queue), IsEmpty());
+}
+
 } /* namespace Detail */
 } /* namespace Task */

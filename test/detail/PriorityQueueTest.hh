@@ -7,6 +7,7 @@
 #include "detail/PriorityQueue.hpp"
 
 using testing::ElementsAreArray;
+using testing::IsEmpty;
 using testing::Test;
 
 namespace Task {
