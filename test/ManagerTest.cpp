@@ -3,7 +3,7 @@
 namespace Task {
 
 TEST_F(ManagerTest, launchOne) {
-  this->setup(2, 1);
+  this->setup(1, 1);
   this->runTasks(); // This makes a task for blocking the manager.
 }
 
@@ -59,7 +59,7 @@ TEST_F(ManagerTest, launchDependentSequentially) {
   auto f1 = p1.get_future();
   auto f2 = p2.get_future();
 
-  this->setup(2, 1);
+  this->setup(1, 1);
   this->addTasks({
     [&p2, &f1] {
       p2.set_value();

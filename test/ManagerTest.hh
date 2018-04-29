@@ -1,5 +1,5 @@
-#ifndef TASK_TEST_MANAGER_HH
-#define TASK_TEST_MANAGER_HH
+#ifndef TASK_TEST_MANAGER_TEST_HH
+#define TASK_TEST_MANAGER_TEST_HH
 
 #include "gtest/gtest.h"
 
@@ -45,17 +45,6 @@ class ManagerTest : public Test {
       EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
     }
     _futures.clear();
-  }
-
-  std::future<void> makeBlockingTask() {
-    auto promise = std::make_shared<std::promise<void>>();
-    auto future = promise->get_future();
-
-    auto task = [promise = std::move(promise)] {
-      promise->set_value();
-    };
-    _manager->launch(std::move(task));
-    return future;
   }
 
  private:
