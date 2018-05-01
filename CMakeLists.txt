@@ -45,7 +45,6 @@ if(TASK_MANAGER_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 if(TASK_MANAGER_BUILD_TESTS)
-  message(STATUS "Configuring target '${TESTER_NAME}'")
   include(EnableTests)
 endif()
 
