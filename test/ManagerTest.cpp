@@ -71,4 +71,15 @@ TEST_F(ManagerTest, launchDependentSequentially) {
   this->runTasks();
 }
 
+TEST_F(ManagerTest, stop) {
+  this->setup(2, 2);
+  this->addTasks({
+    // We make the worker sleep for a short period of time so that when it wakes up, if the stop wasn't waiting for
+    // all tasks to complete, it would access to a destroyed manager.
+    [] { std::this_thread::sleep_for(std::chrono::milliseconds(5)); },
+  });
+  _futures.clear(); // Don't wait for the task to finish before stopping.
+  this->runTasks();
+}
+
 } /* namespace Task */

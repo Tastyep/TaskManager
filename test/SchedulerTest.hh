@@ -20,10 +20,11 @@ class SchedulerTest : public Test {
  public:
   SchedulerTest() = default;
   ~SchedulerTest() {
-    _scheduler->stop().get();
+    auto done = _scheduler->stop();
+    EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
   };
 
-  void setup(size_t poolWorkersCount, size_t managerWorkersCount) {
+  void setup(size_t poolWorkersCount, size_t schedulerWorkersCount) {
     for (size_t i = 0; i < poolWorkersCount; ++i) {
       _locks.emplace_back();
     }
@@ -34,7 +35,7 @@ class SchedulerTest : public Test {
     }
 
     _threadpool = std::make_shared<Detail::Threadpool>(poolWorkersCount);
-    _scheduler = std::make_shared<Scheduler>(_threadpool, managerWorkersCount);
+    _scheduler = std::make_shared<Scheduler>(_threadpool, schedulerWorkersCount);
 
     for (size_t i = 0; i < futures.size(); ++i) {
       auto task = [future = std::move(futures[i])] {

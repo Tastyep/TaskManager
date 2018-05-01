@@ -120,4 +120,18 @@ TEST_F(SchedulerTest, checkTaskIsScheduled) {
   this->runTasks();
 }
 
+TEST_F(SchedulerTest, stopAndDiscard) {
+  size_t n = 0;
+
+  this->setup(1, 1);
+  this->addTasks({
+    { [&n] { n = 1; }, std::chrono::minutes(1) },
+  });
+  auto done = _scheduler->stop(true);
+
+  this->runTasks();
+  EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(0, n);
+}
+
 } /* namespace Task */

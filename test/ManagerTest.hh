@@ -19,19 +19,29 @@ class ManagerTest : public Test {
  public:
   ManagerTest() = default;
   ~ManagerTest() {
-    _manager->stop().get();
+    auto done = _manager->stop();
+    EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
   };
 
   void setup(size_t poolWorkersCount, size_t managerWorkersCount) {
-    std::shared_future<void> future = _lock.get_future();
+    for (size_t i = 0; i < poolWorkersCount; ++i) {
+      _locks.emplace_back();
+    }
+    std::vector<std::shared_future<void>> futures(_locks.size());
+
+    for (size_t i = 0; i < _locks.size(); ++i) {
+      futures[i] = _locks[i].get_future();
+    }
 
     _threadpool = std::make_shared<Detail::Threadpool>(poolWorkersCount);
     _manager = std::make_shared<Manager>(_threadpool, managerWorkersCount);
 
-    auto task = [future = std::move(future)] {
-      EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
-    };
-    _manager->launch(std::move(task));
+    for (size_t i = 0; i < futures.size(); ++i) {
+      auto task = [future = std::move(futures[i])] {
+        EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      };
+      _manager->launch(std::move(task));
+    }
   }
 
   void addTasks(std::vector<std::function<void()>>&& functors) {
@@ -40,17 +50,19 @@ class ManagerTest : public Test {
     }
   }
   void runTasks() {
-    _lock.set_value();
+    for (auto& lock : _locks) {
+      lock.set_value();
+    }
     for (auto& future : _futures) {
       EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
     }
     _futures.clear();
   }
 
- private:
+ protected:
   std::shared_ptr<Detail::Threadpool> _threadpool;
   std::shared_ptr<Manager> _manager;
-  std::promise<void> _lock;
+  std::vector<std::promise<void>> _locks;
   std::vector<std::shared_future<void>> _futures;
 };
 
