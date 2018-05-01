@@ -2,7 +2,6 @@
 #define TASK_DETAIL_THREADPOOL_HH
 
 #include <algorithm>
-#include <atomic>
 #include <condition_variable>
 #include <cstddef>
 #include <mutex>
@@ -30,7 +29,7 @@ class Threadpool {
   std::vector<std::thread> _workers;
   std::condition_variable _cv;
   std::mutex _mutex;
-  std::atomic_bool _stopRequested{ false };
+  bool _stopRequested{ false };
 };
 
 } /* namespace Detail */

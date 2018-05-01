@@ -11,12 +11,12 @@ Threadpool::Threadpool(size_t threadCount) {
 }
 
 Threadpool::~Threadpool() {
-  _stopRequested = true;
   {
     std::lock_guard<std::mutex> guard(_mutex);
 
-    _cv.notify_all();
+    _stopRequested = true;
   }
+  _cv.notify_all();
   for (auto& worker : _workers) {
     if (worker.joinable()) {
       worker.join();
@@ -34,28 +34,31 @@ void Threadpool::schedule(TimedTask task) {
 }
 
 void Threadpool::processTasks() {
-  while (!_stopRequested) {
+  bool stopped = false;
+
+  while (!stopped) {
     std::unique_lock<std::mutex> lock(_mutex);
-    auto timeout = Clock::now() + std::chrono::hours(1);
+    auto timeout = Clock::now();
     bool taskReady = false;
 
     while (!taskReady) {
-      // The condvar can be unblocked by calling notify_xxx to signal that a new task has been added.
-      // We should update the timeout if the new task has a higher priority.
-      if (!_tasks.empty()) {
-        timeout = _tasks.top().timepoint();
-      }
-      taskReady = _cv.wait_until(lock, timeout, [this] { //
-        return !_tasks.empty() || _stopRequested;
+      taskReady = _cv.wait_until(lock, timeout, [this, &timeout, &stopped] { //
+        stopped = _stopRequested;
+        if (stopped) {
+          return true;
+        }
+        // The condvar can be unblocked by calling notify_xxx to signal that a new task has been added.
+        // We should update the timeout if the new task has a higher or lower priority.
+        if (!_tasks.empty()) {
+          timeout = _tasks.top().timepoint();
+          return timeout <= Clock::now();
+        }
+        timeout = Clock::now() + std::chrono::hours(1);
+
+        return false;
       });
-      if (_stopRequested) {
+      if (stopped) {
         return;
-      }
-      // This is done to avoid executing the most recent task when another one gets added.
-      // Still, it is necessary to wake up the thread in order to update the timeout.
-      // The container's size needs to be checked as the condvar is not garanted to obtain the lock first.
-      if (_tasks.empty() || _tasks.top().timepoint() > Clock::now()) {
-        taskReady = false;
       }
     }
 

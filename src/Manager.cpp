@@ -2,8 +2,8 @@
 
 namespace Task {
 
-Manager::Manager(std::shared_ptr<Detail::Threadpool> Threadpool, size_t maxWorkers)
-  : _threadpool(std::move(Threadpool))
+Manager::Manager(std::shared_ptr<Detail::Threadpool> threadpool, size_t maxWorkers)
+  : _threadpool(std::move(threadpool))
   , _maxWorkers(maxWorkers) {}
 
 std::future<void> Manager::stop() {

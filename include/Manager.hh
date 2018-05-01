@@ -15,7 +15,7 @@ namespace Task {
 
 class Manager {
  public:
-  Manager(std::shared_ptr<Detail::Threadpool> Threadpool, size_t maxWorkers);
+  Manager(std::shared_ptr<Detail::Threadpool> threadpool, size_t maxWorkers);
 
   std::future<void> stop();
 
