@@ -92,6 +92,25 @@ TEST_F(SchedulerTest, scheduleDependentSequentially) {
   this->runTasks();
 }
 
+TEST_F(SchedulerTest, erase) {
+  size_t n = 0;
+
+  this->setup(1, 1);
+  this->addTasks({
+    { [&n] { ++n; }, std::chrono::microseconds(0) },
+    { [&n] { ++n; }, std::chrono::microseconds(1) },
+    { [&n] { ++n; }, std::chrono::microseconds(2) },
+    { [&n] { ++n; }, std::chrono::microseconds(3) },
+    { [&n] { ++n; }, std::chrono::microseconds(4) },
+  });
+  _scheduler->remove("1");
+  _scheduler->remove("4");
+  _scheduler->remove("5"); // This task doesn't exist, but it should not cause any error.
+  this->runTasks();
+
+  EXPECT_EQ(3, n);
+}
+
 TEST_F(SchedulerTest, checkTaskIsScheduled) {
   this->setup(1, 1);
   this->addTasks({

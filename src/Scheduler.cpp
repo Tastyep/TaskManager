@@ -42,6 +42,12 @@ std::future<void> Scheduler::stop(bool discard) {
   return future;
 }
 
+void Scheduler::remove(const std::string& id) {
+  std::lock_guard<std::mutex> guard(_mutex);
+
+  _tasks.erase(TimedTask(_hasher(id)));
+}
+
 bool Scheduler::isScheduled(const std::string& id) const {
   std::lock_guard<std::mutex> guard(_mutex);
 

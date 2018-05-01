@@ -67,6 +67,7 @@ class Scheduler {
     return future;
   }
 
+  void remove(const std::string& id);
   bool isScheduled(const std::string& id) const;
 
  private:
