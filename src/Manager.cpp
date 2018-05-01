@@ -45,7 +45,7 @@ void Manager::processTasks() {
   _tasks.pop();
 
   ++_workerCount;
-  _threadpool->schedule(std::move(task));
+  _threadpool->execute(std::move(task));
 }
 
 } /* namespace Task */

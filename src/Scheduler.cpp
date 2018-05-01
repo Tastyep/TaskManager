@@ -37,7 +37,7 @@ std::future<void> Scheduler::stop(bool discard) {
     (*task)();
   };
   // Push the task directly into the pool to avoid id collisions.
-  _threadpool->schedule({ std::move(functor), timepoint });
+  _threadpool->execute({ std::move(functor), timepoint });
 
   return future;
 }
@@ -57,7 +57,7 @@ void Scheduler::processTasks() {
   _tasks.pop();
 
   ++_workerCount;
-  _threadpool->schedule(task);
+  _threadpool->execute(task);
 }
 
 } /* namespace Task */

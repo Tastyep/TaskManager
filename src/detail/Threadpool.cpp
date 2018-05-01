@@ -24,7 +24,7 @@ Threadpool::~Threadpool() {
   }
 }
 
-void Threadpool::schedule(TimedTask task) {
+void Threadpool::execute(TimedTask task) {
   {
     std::lock_guard<std::mutex> guard(_mutex);
 

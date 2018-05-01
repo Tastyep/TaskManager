@@ -19,7 +19,7 @@ class Threadpool {
   Threadpool(size_t threadCount);
   ~Threadpool();
 
-  void schedule(TimedTask task);
+  void execute(TimedTask task);
 
  private:
   void processTasks();

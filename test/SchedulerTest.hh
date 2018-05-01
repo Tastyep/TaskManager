@@ -40,7 +40,7 @@ class SchedulerTest : public Test {
       auto task = [future = std::move(future)] {
         EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
       };
-      _threadpool->schedule(Detail::TimedTask{ std::move(task), Detail::Clock::now() - std::chrono::hours(1) });
+      _threadpool->execute(Detail::TimedTask{ std::move(task), Detail::Clock::now() - std::chrono::hours(1) });
     }
   }
 

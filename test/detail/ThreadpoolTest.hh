@@ -29,7 +29,7 @@ class DetailThreadpool : public Test {
     auto task = [future = std::move(future)] {
       EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
     };
-    _threadpool.schedule(TimedTask{ std::move(task), Clock::now() - std::chrono::hours(1) }); // arbitrary value.
+    _threadpool.execute(TimedTask{ std::move(task), Clock::now() - std::chrono::hours(1) }); // arbitrary value.
 
     return lock;
   }
@@ -52,7 +52,7 @@ class DetailThreadpool : public Test {
         ids.push_back(i);
         promise->set_value();
       };
-      _threadpool.schedule(TimedTask{ std::move(task), startTime + delays[i] });
+      _threadpool.execute(TimedTask{ std::move(task), startTime + delays[i] });
     }
 
     lock->set_value();
