@@ -45,8 +45,6 @@ TEST_F(DetailThreadpool, UseThreadpoolFromTask) {
   auto promise = std::make_shared<std::promise<void>>();
   auto future = promise->get_future();
 
-  auto lock = this->synchronize();
-
   auto task = [this, promise = std::move(promise)] {
     auto task = [promise = std::move(promise)] {
       promise->set_value();
@@ -55,7 +53,6 @@ TEST_F(DetailThreadpool, UseThreadpoolFromTask) {
   };
   _threadpool.schedule(TimedTask{ std::move(task), Clock::now() });
 
-  lock->set_value();
   EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
 }
 
