@@ -42,6 +42,14 @@ std::future<void> Scheduler::stop(bool discard) {
   return future;
 }
 
+bool Scheduler::isScheduled(const std::string& id) const {
+  std::lock_guard<std::mutex> guard(_mutex);
+
+  return _tasks.contain(TimedTask(_hasher(id)));
+}
+
+// Private methods
+
 void Scheduler::addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint) {
   std::lock_guard<std::mutex> guard(_mutex);
 

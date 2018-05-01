@@ -35,6 +35,12 @@ class PriorityQueue : public std::priority_queue<T, std::vector<T>, Comp> {
     return true;
   }
 
+  bool contain(const T& e) const {
+    const auto it = std::find(this->c.begin(), this->c.end(), e);
+
+    return it != this->c.end();
+  }
+
   void clear() {
     this->c.clear();
   }

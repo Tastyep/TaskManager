@@ -18,6 +18,9 @@ class Scheduler {
  private:
   class TimedTask : public Detail::TimedTask {
    public:
+    explicit TimedTask(size_t id)
+      : Detail::TimedTask(nullptr, {})
+      , _id(id) {}
     TimedTask(size_t id, Detail::Task functor, Detail::Timepoint timepoint)
       : Detail::TimedTask(std::move(functor), timepoint)
       , _id(id) {}
@@ -36,12 +39,12 @@ class Scheduler {
   std::future<void> stop(bool discard = false);
 
   template <typename Duration, class F, class... Args>
-  auto launchIn(const std::string& id, Duration delay, F&& function, Args&&... args) {
-    return this->launchAt(id, Detail::Clock::now() + delay, std::forward<F>(function), std::forward<Args>(args)...);
+  auto scheduleIn(const std::string& id, Duration delay, F&& function, Args&&... args) {
+    return this->scheduleAt(id, Detail::Clock::now() + delay, std::forward<F>(function), std::forward<Args>(args)...);
   }
 
   template <class F, class... Args>
-  auto launchAt(const std::string& id, Detail::Timepoint timepoint, F&& function, Args&&... args) //
+  auto scheduleAt(const std::string& id, Detail::Timepoint timepoint, F&& function, Args&&... args) //
     -> std::future<typename std::result_of<F(Args...)>::type> {
     using ReturnType = typename std::result_of<F(Args...)>::type;
     std::future<ReturnType> future;
@@ -64,6 +67,8 @@ class Scheduler {
     return future;
   }
 
+  bool isScheduled(const std::string& id) const;
+
  private:
   void addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint);
   void processTasks();
@@ -72,7 +77,7 @@ class Scheduler {
   std::shared_ptr<Detail::Threadpool> _threadpool;
   Detail::PriorityQueue<TimedTask, std::greater<>> _tasks;
   std::hash<std::string> _hasher;
-  std::mutex _mutex;
+  mutable std::mutex _mutex;
   size_t _maxWorkers;
   size_t _workerCount{ 0 };
 };

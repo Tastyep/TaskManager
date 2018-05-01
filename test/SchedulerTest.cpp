@@ -92,4 +92,13 @@ TEST_F(SchedulerTest, scheduleDependentSequentially) {
   this->runTasks();
 }
 
+TEST_F(SchedulerTest, checkTaskIsScheduled) {
+  this->setup(1, 1);
+  this->addTasks({
+    { [] {}, std::chrono::microseconds(0) },
+  });
+  EXPECT_TRUE(_scheduler->isScheduled("0"));
+  this->runTasks();
+}
+
 } /* namespace Task */

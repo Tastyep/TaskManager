@@ -32,6 +32,13 @@ TEST_F(DetailPriorityQueue, Update) {
                                        }));
 }
 
+TEST_F(DetailPriorityQueue, Contain) {
+  PriorityQueue<Entity> queue;
+
+  queue.push(Entity{ 4, 1 });
+  EXPECT_TRUE(queue.contain(Entity{ 4, 0 }));
+}
+
 TEST_F(DetailPriorityQueue, Clear) {
   PriorityQueue<int> queue;
 

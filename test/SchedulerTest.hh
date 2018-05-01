@@ -36,18 +36,18 @@ class SchedulerTest : public Test {
     _threadpool = std::make_shared<Detail::Threadpool>(poolWorkersCount);
     _scheduler = std::make_shared<Scheduler>(_threadpool, managerWorkersCount);
 
-    for (auto&& future : futures) {
-      auto task = [future = std::move(future)] {
+    for (size_t i = 0; i < futures.size(); ++i) {
+      auto task = [future = std::move(futures[i])] {
         EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
       };
-      _threadpool->execute(Detail::TimedTask{ std::move(task), Detail::Clock::now() - std::chrono::hours(1) });
+      _scheduler->scheduleIn("setup_" + std::to_string(i), -std::chrono::hours(1), std::move(task));
     }
   }
 
   void addTasks(std::vector<std::pair<std::function<void()>, std::chrono::microseconds>>&& functors) {
     const auto now = Detail::Clock::now();
     for (size_t i = 0; i < functors.size(); ++i) {
-      _futures.push_back(_scheduler->launchAt(std::to_string(i), now + functors[i].second, functors[i].first));
+      _futures.push_back(_scheduler->scheduleAt(std::to_string(i), now + functors[i].second, functors[i].first));
     }
   }
   void runTasks() {
@@ -60,7 +60,7 @@ class SchedulerTest : public Test {
     _futures.clear();
   }
 
- private:
+ protected:
   std::shared_ptr<Detail::Threadpool> _threadpool;
   std::shared_ptr<Scheduler> _scheduler;
   std::vector<std::promise<void>> _locks;
