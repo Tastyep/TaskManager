@@ -92,6 +92,24 @@ TEST_F(SchedulerTest, scheduleDependentSequentially) {
   this->runTasks();
 }
 
+TEST_F(SchedulerTest, scheduleNested) {
+  this->setup(2, 2);
+  this->addTasks({
+    { [this] {
+       std::promise<void> promise;
+       auto future = promise.get_future();
+
+       _scheduler->scheduleIn(
+         "0", std::chrono::microseconds(0), [promise = std::move(promise)]() mutable { promise.set_value(); });
+
+       EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+     },
+      std::chrono::microseconds(0) },
+  });
+
+  this->runTasks();
+}
+
 TEST_F(SchedulerTest, erase) {
   size_t n = 0;
 

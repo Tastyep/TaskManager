@@ -71,6 +71,22 @@ TEST_F(ManagerTest, launchDependentSequentially) {
   this->runTasks();
 }
 
+TEST_F(ManagerTest, launchNested) {
+  this->setup(2, 2);
+  this->addTasks({
+    [this] {
+      std::promise<void> promise;
+      auto future = promise.get_future();
+
+      _manager->launch([promise = std::move(promise)]() mutable { promise.set_value(); });
+
+      EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+    },
+  });
+
+  this->runTasks();
+}
+
 TEST_F(ManagerTest, stop) {
   this->setup(2, 2);
   this->addTasks({
