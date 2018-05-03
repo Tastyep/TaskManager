@@ -26,6 +26,10 @@ set(CMAKE_BUILD_TYPE ${BUILD_TYPE})
 
 message(STATUS "Building ${BUILD_TYPE} ${PROJECT_NAME}\n----------------------------")
 
+# Check compiler version
+include(CheckCompiler)
+check_compiler()
+
 add_subdirectory(lib)
 
 # Set compiler flags
