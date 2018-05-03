@@ -5,69 +5,57 @@ A C++ TaskManager aiming at easily managing asynchronous tasks using the feature
 A compiler supporting the C++14 features
 
 ### Features
-###### Abstractions
-* A Task class which is executable, contains std::functions determining it's behaviour
-* A Worker, manages the thread and the tasks execution
+###### Components
+* A ThreadPool, manages workers (threads).
+* A Task manager for running tasks asynchronously.
+* A Scheduler for scheduling tasks asynchronously.
 
-###### Modules
-* A ThreadPool, manages the workers
-* A Scheduler, same as the Threadpool, but scheduled ...
+###### Interface
+* The library exposes a module with free functions for creating managers and schedulers.
 
 ### Basic Usage
-
+###### Manager
 ```C++
-using namespace TaskManager;
+// Create the thread pool with the initial number of threads (2 here).
+Task::Module::init(2);
 
-// Create the ThreadManager with the initial number of threads
-ThreadManager manager(1);
+// Create a task manager with one worker.
+auto manager = Task::Module::makeManager(1);
 
-// Create the ThreadPool indicating the maximum number of parallel tasks
-ThreadPool pool(2, manager);
+// Add a new task and get its future.
+auto future = manager.launch([] { return 42; });
 
-// Might make it optional in the future
-pool.start();
-
-// Add a new task and get it's future
-auto future = pool.addTask([](const std::string& ret) { return ret; }, "success");
-
-// Get result from future and print it
+// Get the result from the future and print it.
 std::cout << future.get() << std::endl;
 
+// Not necessary here, but the stop method ensures that all launched tasks have been executed.
+manager.stop().get();
 ```
 
-In the above example, even if the pool supports 2 parallel tasks, because the assigned manager manages one worker, only one task could be executed at a time.
+In the above example if we were to push more tasks, only one at a time would be executed as the manager has only one worker assigned.
 
-### Scheduler Usage
-
+###### Scheduler
 ```C++
+// Create the thread pool with the initial number of threads (2 here).
+Task::Module::init(2);
 
-using namespace TaskManager;
+// Create a scheduler with one worker.
+auto scheduler = Task::Module::makeScheduler(1);
 
-// Create the ThreadManager with the initial number of threads
-ThreadManager manager(1);
+// Declare the variable n.
+size_t n = 0;
 
-// Create the Scheduler with 1 as the maximum number of parallel tasks
-Scheduler scheduler(1, manager);
-bool stop = false;
+// Add new tasks and get the future.
+scheduler.scheduleIn("Task1", std::chrono::seconds(2), [&n] { n++; });
+auto future = scheduler.scheduleIn("Task2", std::chrono::seconds(1), [&n] { n = 41 });
 
-// Create a new task printing the number of elapsed seconds since it's execution
-Task task([&stop, &scheduler]() {
-    unsigned int i = 1;
-    while (!stop) {
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::cout << std::to_string(i) + " seconds elapsed" << std::endl;
-        ++i;
-    }
-    std::cout << "End of the task" << std::endl;
-});
+// Get the future and print the updated value.
+future.get()
+std::cout << n << std::endl;
 
-// Set the stopping condition of the task
-task.setStopFunction([&stop]() { stop = true; });
-
-// Run the task immediatly
-scheduler.runAt(task, std::chrono::steady_clock::now());
-
-// Wait for an event to happen so the scheduler gets detructed and the task gets stopped
-
+// Not necessary here, but the stop method ensures that all the scheduled tasks have been executed.
+scheduler.stop().get();
 ```
-In the above example it is needed to set a function to stop the task because it runs an infinite loop.
+
+The same note applies for the scheduler regarding the number of associated workers.
+Also an identifier ("TaskX") is provided so that periodic tasks could be removed.
