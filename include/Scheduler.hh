@@ -81,6 +81,7 @@ class Scheduler {
   mutable std::mutex _mutex;
   size_t _maxWorkers;
   size_t _workerCount{ 0 };
+  bool _stopped{ false };
 };
 
 } /* namespace Task */

@@ -11,6 +11,7 @@ Scheduler::Scheduler(std::shared_ptr<Detail::Threadpool> threadpool, size_t maxW
 std::future<void> Scheduler::stop(bool discard) {
   std::lock_guard<std::mutex> guard(_mutex);
 
+  _stopped = true;
   if (discard) {
     _tasks.clear();
   }
@@ -59,6 +60,9 @@ bool Scheduler::isScheduled(const std::string& id) const {
 void Scheduler::addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint) {
   std::lock_guard<std::mutex> guard(_mutex);
 
+  if (_stopped) {
+    return;
+  }
   _tasks.emplace(_hasher(id), std::move(functor), timepoint);
   this->processTasks();
 }

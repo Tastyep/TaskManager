@@ -20,8 +20,10 @@ class SchedulerTest : public Test {
  public:
   SchedulerTest() = default;
   ~SchedulerTest() {
-    auto done = _scheduler->stop();
-    EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+    if (_scheduler) {
+      auto done = _scheduler->stop();
+      EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+    }
   };
 
   void setup(size_t poolWorkersCount, size_t schedulerWorkersCount) {

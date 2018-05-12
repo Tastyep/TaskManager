@@ -98,4 +98,47 @@ TEST_F(ManagerTest, stop) {
   this->runTasks();
 }
 
+TEST_F(ManagerTest, launchOnStopped) {
+  auto threadpool = std::make_shared<Detail::Threadpool>(2);
+  auto manager = std::make_shared<Manager>(threadpool, 1);
+
+  manager->stop().get();
+  auto future = manager->launch([] { return true; });
+
+  EXPECT_TRUE(future.valid());
+  EXPECT_THROW(future.get(), std::future_error);
+}
+
+TEST_F(ManagerTest, multipleManagers) {
+  auto threadpool = std::make_shared<Detail::Threadpool>(2);
+  auto managerA = std::make_shared<Manager>(threadpool, 1);
+  auto managerB = std::make_shared<Manager>(threadpool, 1);
+  auto managerC = std::make_shared<Manager>(threadpool, 1);
+  std::promise<void> p1;
+  std::promise<void> p2;
+  std::promise<void> p3;
+
+  for (size_t i = 0; i < 10; ++i) {
+    managerA->launch([&p1, &p2] {
+      p2.set_value();
+      p1.get_future().get();
+      p1 = std::promise<void>();
+    });
+    managerB->launch([&p2, &p3] {
+      p2.get_future().get();
+      p2 = std::promise<void>();
+      p3.set_value();
+    });
+    managerC->launch([&p3, &p1] {
+      p3.get_future().get();
+      p3 = std::promise<void>();
+      p1.set_value();
+    });
+  }
+
+  EXPECT_EQ(std::future_status::ready, managerA->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, managerB->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, managerC->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+}
+
 } /* namespace Task */

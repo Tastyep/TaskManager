@@ -25,7 +25,11 @@ std::future<void> Manager::stop() {
   auto functor = [task = std::move(task)]() mutable {
     (*task)();
   };
-  this->addTask(std::move(functor));
+  std::lock_guard<std::mutex> guard(_mutex);
+
+  _stopped = true;
+  _tasks.emplace(std::move(functor), Detail::Clock::now());
+  this->processTasks();
 
   return future;
 }
@@ -33,6 +37,9 @@ std::future<void> Manager::stop() {
 void Manager::addTask(std::function<void()> functor) {
   std::lock_guard<std::mutex> guard(_mutex);
 
+  if (_stopped) {
+    return;
+  }
   _tasks.emplace(std::move(functor), Detail::Clock::now());
   this->processTasks();
 }

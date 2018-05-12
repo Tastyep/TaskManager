@@ -6,7 +6,7 @@ namespace Task {
 
 TEST_F(SchedulerTest, scheduleOne) {
   this->setup(1, 1);
-  this->runTasks(); // This makes a task for blocking the manager.
+  this->runTasks(); // This makes a task for blocking the scheduler.
 }
 
 TEST_F(SchedulerTest, scheduleMultipleOrderedSequentially) {
@@ -150,6 +150,18 @@ TEST_F(SchedulerTest, stopAndDiscard) {
   this->runTasks();
   EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
   EXPECT_EQ(0, n);
+}
+
+TEST_F(SchedulerTest, scheduleOnStopped) {
+  auto threadpool = std::make_shared<Detail::Threadpool>(2);
+  auto scheduler = std::make_shared<Scheduler>(threadpool, 1);
+
+  scheduler->stop().get();
+  auto future = scheduler->scheduleIn("0", std::chrono::milliseconds(0), [] {});
+
+  EXPECT_FALSE(scheduler->isScheduled("0"));
+  EXPECT_TRUE(future.valid());
+  EXPECT_THROW(future.get(), std::future_error);
 }
 
 } /* namespace Task */

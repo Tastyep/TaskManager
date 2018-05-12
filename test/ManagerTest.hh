@@ -19,8 +19,10 @@ class ManagerTest : public Test {
  public:
   ManagerTest() = default;
   ~ManagerTest() {
-    auto done = _manager->stop();
-    EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+    if (_manager) {
+      auto done = _manager->stop();
+      EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+    }
   };
 
   void setup(size_t poolWorkersCount, size_t managerWorkersCount) {
