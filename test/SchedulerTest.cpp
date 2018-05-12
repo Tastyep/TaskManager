@@ -110,6 +110,56 @@ TEST_F(SchedulerTest, scheduleNested) {
   this->runTasks();
 }
 
+TEST_F(SchedulerTest, schedulePeriodic) {
+  auto threadpool = std::make_shared<Detail::Threadpool>(2);
+  auto scheduler = std::make_shared<Scheduler>(threadpool, 1);
+  std::promise<void> p;
+  auto f = p.get_future();
+  size_t i = 0;
+
+  scheduler->scheduleEvery("0", std::chrono::milliseconds(0), [&i, &p] {
+    ++i;
+    if (i == 5) {
+      p.set_value();
+    }
+  });
+
+  EXPECT_EQ(std::future_status::ready, f.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+}
+
+TEST_F(SchedulerTest, multiplePeriodicTasksOneWorker) {
+  _threadpool = std::make_shared<Detail::Threadpool>(2);
+  auto scheduler = this->setupScheduler(1);
+  std::promise<void> p;
+  auto f = p.get_future();
+  std::string strA = "HloWrd";
+  std::string strB = "el ol!";
+  std::string expected = "Hello World!";
+  std::string final;
+  size_t i = 0;
+
+  scheduler->scheduleEvery("A", std::chrono::milliseconds(0), [&] { //
+    if (i < strA.size()) {
+      final.push_back(strA[i]);
+    }
+  });
+  scheduler->scheduleEvery("B", std::chrono::milliseconds(0), [&] { //
+    if (i < strB.size()) {
+      final.push_back(strB[i++]);
+      if (i == strB.size()) {
+        p.set_value();
+      }
+    }
+  });
+  // Unblock the scheduler.
+  this->runTasks();
+  EXPECT_EQ(std::future_status::ready, f.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+
+  EXPECT_EQ(expected, final);
+  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+}
+
 TEST_F(SchedulerTest, erase) {
   size_t n = 0;
 
@@ -156,7 +206,7 @@ TEST_F(SchedulerTest, scheduleOnStopped) {
   auto threadpool = std::make_shared<Detail::Threadpool>(2);
   auto scheduler = std::make_shared<Scheduler>(threadpool, 1);
 
-  scheduler->stop().get();
+  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
   auto future = scheduler->scheduleIn("0", std::chrono::milliseconds(0), [] {});
 
   EXPECT_FALSE(scheduler->isScheduled("0"));
