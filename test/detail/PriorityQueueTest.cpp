@@ -15,6 +15,12 @@ TEST_F(DetailPriorityQueue, Erase) {
   EXPECT_THAT(this->makeVector(queue), ElementsAreArray({ 5, 3 }));
 }
 
+TEST_F(DetailPriorityQueue, EraseInexistant) {
+  PriorityQueue<int> queue;
+
+  EXPECT_FALSE(queue.erase(1));
+}
+
 TEST_F(DetailPriorityQueue, Update) {
   PriorityQueue<Entity> queue;
 
@@ -32,11 +38,23 @@ TEST_F(DetailPriorityQueue, Update) {
                                        }));
 }
 
+TEST_F(DetailPriorityQueue, UpdateInexistant) {
+  PriorityQueue<Entity> queue;
+
+  EXPECT_FALSE(queue.update(Entity{ 1, 1 }));
+}
+
 TEST_F(DetailPriorityQueue, Contain) {
   PriorityQueue<Entity> queue;
 
   queue.push(Entity{ 4, 1 });
   EXPECT_TRUE(queue.contain(Entity{ 4, 0 }));
+}
+
+TEST_F(DetailPriorityQueue, ContainNotFound) {
+  PriorityQueue<Entity> queue;
+
+  EXPECT_FALSE(queue.contain(Entity{ 4, 0 }));
 }
 
 TEST_F(DetailPriorityQueue, Clear) {
