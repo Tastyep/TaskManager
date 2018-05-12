@@ -12,6 +12,7 @@ std::future<void> Scheduler::stop(bool discard) {
   std::lock_guard<std::mutex> guard(_mutex);
 
   _stopped = true;
+  _periodicTasks.clear();
   if (discard) {
     _tasks.clear();
   }
@@ -57,11 +58,13 @@ bool Scheduler::isScheduled(const std::string& id) const {
 
 // Private methods
 
-void Scheduler::addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint) {
-  std::lock_guard<std::mutex> guard(_mutex);
-
+void Scheduler::addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint,
+                        bool reschedulable) {
   if (_stopped) {
     return;
+  }
+  if (reschedulable) {
+    _periodicTasks[id] = functor;
   }
   _tasks.emplace(_hasher(id), std::move(functor), timepoint);
   this->processTasks();

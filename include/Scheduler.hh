@@ -6,6 +6,7 @@
 #include <future>
 #include <mutex>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 #include "detail/PriorityQueue.hpp"
@@ -62,21 +63,46 @@ class Scheduler {
         this->processTasks();
       }
     };
+    std::lock_guard<std::mutex> guard(_mutex);
     this->addTask(id, std::move(functor), timepoint);
 
     return future;
+  }
+
+  template <typename Duration, class F, class... Args>
+  void scheduleEvery(const std::string& id, Duration delay, F&& function, Args&&... args) {
+    auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+
+    auto periodicTask = [this, id, task = std::move(task), delay]() {
+      task();
+
+      {
+        std::lock_guard<std::mutex> guard(_mutex);
+
+        --_workerCount;
+        auto periodicTask = _periodicTasks.find(id);
+        if (periodicTask == _periodicTasks.end()) {
+          return;
+        }
+        this->addTask(id, periodicTask->second, Detail::Clock::now() + delay);
+      }
+    };
+    std::lock_guard<std::mutex> guard(_mutex);
+    this->addTask(id, std::move(periodicTask), Detail::Clock::now() + delay, true);
   }
 
   void remove(const std::string& id);
   bool isScheduled(const std::string& id) const;
 
  private:
-  void addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint);
+  void addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint,
+               bool reschedulable = false);
   void processTasks();
 
  private:
   std::shared_ptr<Detail::Threadpool> _threadpool;
   Detail::PriorityQueue<TimedTask, std::greater<>> _tasks;
+  std::unordered_map<std::string, std::function<void()>> _periodicTasks;
   std::hash<std::string> _hasher;
   mutable std::mutex _mutex;
   size_t _maxWorkers;
