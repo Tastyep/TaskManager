@@ -16,7 +16,7 @@ namespace Detail {
 
 class Threadpool {
  public:
-  Threadpool(size_t threadCount);
+  explicit Threadpool(size_t threadCount);
   ~Threadpool();
 
   void execute(TimedTask task);

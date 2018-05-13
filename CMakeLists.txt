@@ -45,7 +45,7 @@ add_library(${LIB_NAME} STATIC ${LIB_SOURCE_FILES})
 
 if(TASK_MANAGER_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   include(EnableClangTidy)
-  enable_clangtidy(SOURCES "${LIB_SOURCE_FILES}")
+  enable_clangtidy(SOURCES "${PROJECT_SOURCE_DIR}/${SOURCE_DIR}")
 endif()
 
 if(TASK_MANAGER_BUILD_TESTS)

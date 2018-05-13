@@ -74,11 +74,12 @@ void Scheduler::processTasks() {
   if (_tasks.empty() || _workerCount == _maxWorkers) {
     return;
   }
-  auto task = std::move(_tasks.top());
+  auto task = _tasks.top();
   _tasks.pop();
 
   ++_workerCount;
-  _threadpool->execute(task);
+  // NOTE: Use static_cast instead of std::move to avoid slicing warnings from clang-tidy.
+  _threadpool->execute(static_cast<Detail::TimedTask&&>(task));
 }
 
 } /* namespace Task */
