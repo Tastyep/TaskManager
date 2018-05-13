@@ -2,6 +2,8 @@
 
 #include <atomic>
 
+using namespace std::chrono_literals;
+
 namespace Task {
 
 TEST_F(SchedulerTest, scheduleOne) {
@@ -58,14 +60,14 @@ TEST_F(SchedulerTest, scheduleDependentInParallel) {
   this->addTasks({
     { [&p2, &f1] {
        p2.set_value();
-       EXPECT_EQ(std::future_status::ready, f1.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+       EXPECT_EQ(std::future_status::ready, f1.wait_for(Async::kTestTimeout));
      },
-      std::chrono::microseconds(0) },
+      0us },
     { [&p1, &f2] {
        p1.set_value();
-       EXPECT_EQ(std::future_status::ready, f2.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+       EXPECT_EQ(std::future_status::ready, f2.wait_for(Async::kTestTimeout));
      },
-      std::chrono::microseconds(0) },
+      0us },
   });
   this->runTasks();
 }
@@ -82,12 +84,12 @@ TEST_F(SchedulerTest, scheduleDependentSequentially) {
        p2.set_value();
        EXPECT_EQ(std::future_status::timeout, f1.wait_for(std::chrono::milliseconds(1)));
      },
-      std::chrono::microseconds(0) },
+      0us },
     { [&p1, &f2] {
        p1.set_value();
-       EXPECT_EQ(std::future_status::ready, f2.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+       EXPECT_EQ(std::future_status::ready, f2.wait_for(Async::kTestTimeout));
      },
-      std::chrono::microseconds(0) },
+      0us },
   });
   this->runTasks();
 }
@@ -99,12 +101,11 @@ TEST_F(SchedulerTest, scheduleNested) {
        std::promise<void> promise;
        auto future = promise.get_future();
 
-       _scheduler->scheduleIn(
-         "0", std::chrono::microseconds(0), [promise = std::move(promise)]() mutable { promise.set_value(); });
+       _scheduler->scheduleIn("0", 0us, [promise = std::move(promise)]() mutable { promise.set_value(); });
 
-       EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+       EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
      },
-      std::chrono::microseconds(0) },
+      0us },
   });
 
   this->runTasks();
@@ -124,8 +125,8 @@ TEST_F(SchedulerTest, schedulePeriodic) {
     }
   });
 
-  EXPECT_EQ(std::future_status::ready, f.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
-  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, f.wait_for(Async::kTestTimeout));
+  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(Async::kTestTimeout));
 }
 
 TEST_F(SchedulerTest, multiplePeriodicTasksOneWorker) {
@@ -154,10 +155,10 @@ TEST_F(SchedulerTest, multiplePeriodicTasksOneWorker) {
   });
   // Unblock the scheduler.
   this->runTasks();
-  EXPECT_EQ(std::future_status::ready, f.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, f.wait_for(Async::kTestTimeout));
 
   EXPECT_EQ(expected, final);
-  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(Async::kTestTimeout));
 }
 
 TEST_F(SchedulerTest, erase) {
@@ -165,11 +166,11 @@ TEST_F(SchedulerTest, erase) {
 
   this->setup(1, 1);
   this->addTasks({
-    { [&n] { ++n; }, std::chrono::microseconds(0) },
-    { [&n] { ++n; }, std::chrono::microseconds(1) },
-    { [&n] { ++n; }, std::chrono::microseconds(2) },
-    { [&n] { ++n; }, std::chrono::microseconds(3) },
-    { [&n] { ++n; }, std::chrono::microseconds(4) },
+    { [&n] { ++n; }, 0us },
+    { [&n] { ++n; }, 1us },
+    { [&n] { ++n; }, 2us },
+    { [&n] { ++n; }, 3us },
+    { [&n] { ++n; }, 4us },
   });
   _scheduler->remove("1");
   _scheduler->remove("4");
@@ -182,7 +183,7 @@ TEST_F(SchedulerTest, erase) {
 TEST_F(SchedulerTest, checkTaskIsScheduled) {
   this->setup(1, 1);
   this->addTasks({
-    { [] {}, std::chrono::microseconds(0) },
+    { [] {}, 0us },
   });
   EXPECT_TRUE(_scheduler->isScheduled("0"));
   this->runTasks();
@@ -193,12 +194,12 @@ TEST_F(SchedulerTest, stopAndDiscard) {
 
   this->setup(1, 1);
   this->addTasks({
-    { [&n] { n = 1; }, std::chrono::minutes(1) },
+    { [&n] { n = 1; }, 1min },
   });
   auto done = _scheduler->stop(true);
 
   this->runTasks();
-  EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, done.wait_for(Async::kTestTimeout));
   EXPECT_EQ(0, n);
 }
 
@@ -206,8 +207,8 @@ TEST_F(SchedulerTest, scheduleOnStopped) {
   auto threadpool = std::make_shared<Detail::Threadpool>(2);
   auto scheduler = std::make_shared<Scheduler>(threadpool, 1);
 
-  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
-  auto future = scheduler->scheduleIn("0", std::chrono::milliseconds(0), [] {});
+  EXPECT_EQ(std::future_status::ready, scheduler->stop().wait_for(Async::kTestTimeout));
+  auto future = scheduler->scheduleIn("0", 0us, [] {});
 
   EXPECT_FALSE(scheduler->isScheduled("0"));
   EXPECT_TRUE(future.valid());

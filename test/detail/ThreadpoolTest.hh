@@ -27,7 +27,7 @@ class DetailThreadpool : public Test {
     std::shared_future<void> future = lock->get_future();
 
     auto task = [future = std::move(future)] {
-      EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
     };
     _threadpool.execute(TimedTask{ std::move(task), Clock::now() - std::chrono::hours(1) }); // arbitrary value.
 
@@ -57,7 +57,7 @@ class DetailThreadpool : public Test {
 
     lock->set_value();
     for (size_t i = 0; i < futures.size(); ++i) {
-      EXPECT_EQ(std::future_status::ready, futures[i].wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, futures[i].wait_for(Async::kTestTimeout));
       EXPECT_TRUE(measuredDelay[i] >= delays[i]);
     }
 

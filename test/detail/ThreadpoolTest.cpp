@@ -53,7 +53,7 @@ TEST_F(DetailThreadpool, UseThreadpoolFromTask) {
   };
   _threadpool.execute(TimedTask{ std::move(task), Clock::now() });
 
-  EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
 }
 
 } /* namespace Detail */

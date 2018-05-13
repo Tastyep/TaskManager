@@ -21,7 +21,7 @@ class ManagerTest : public Test {
   ~ManagerTest() {
     if (_manager) {
       auto done = _manager->stop();
-      EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, done.wait_for(Async::kTestTimeout));
     }
   };
 
@@ -35,9 +35,7 @@ class ManagerTest : public Test {
     _manager = std::make_shared<Manager>(_threadpool, managerWorkersCount);
 
     for (size_t i = 0; i < managerWorkersCount; ++i) {
-      auto task = [this] {
-        EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
-      };
+      auto task = [this] { EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(Async::kTestTimeout)); };
       _manager->launch(std::move(task));
     }
   }
@@ -52,7 +50,7 @@ class ManagerTest : public Test {
       _lock.first->set_value();
     }
     for (auto& future : _futures) {
-      EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
     }
     _futures.clear();
   }

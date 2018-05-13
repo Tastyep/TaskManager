@@ -22,7 +22,7 @@ class SchedulerTest : public Test {
   ~SchedulerTest() {
     if (_scheduler) {
       auto done = _scheduler->stop();
-      EXPECT_EQ(std::future_status::ready, done.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, done.wait_for(Async::kTestTimeout));
     }
   };
 
@@ -40,7 +40,7 @@ class SchedulerTest : public Test {
     auto scheduler = std::make_shared<Scheduler>(_threadpool, schedulerWorkersCount);
     for (size_t i = 0; i < schedulerWorkersCount; ++i) {
       auto task = [this] {
-        EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+        EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(Async::kTestTimeout));
       };
       scheduler->scheduleIn("setup_" + std::to_string(i), -std::chrono::hours(1), std::move(task));
     }
@@ -59,7 +59,7 @@ class SchedulerTest : public Test {
       _lock.first->set_value();
     }
     for (auto& future : _futures) {
-      EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
     }
     _futures.clear();
   }

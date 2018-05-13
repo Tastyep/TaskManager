@@ -1,5 +1,7 @@
 #include "test/ManagerTest.hh"
 
+using namespace std::chrono_literals;
+
 namespace Task {
 
 TEST_F(ManagerTest, launchOne) {
@@ -41,11 +43,11 @@ TEST_F(ManagerTest, launchDependentInParallel) {
   this->addTasks({
     [&p2, &f1] {
       p2.set_value();
-      EXPECT_EQ(std::future_status::ready, f1.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, f1.wait_for(Async::kTestTimeout));
     },
     [&p1, &f2] {
       p1.set_value();
-      EXPECT_EQ(std::future_status::ready, f2.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, f2.wait_for(Async::kTestTimeout));
     },
   });
   this->runTasks();
@@ -61,11 +63,11 @@ TEST_F(ManagerTest, launchDependentSequentially) {
   this->addTasks({
     [&p2, &f1] {
       p2.set_value();
-      EXPECT_EQ(std::future_status::timeout, f1.wait_for(std::chrono::milliseconds(1)));
+      EXPECT_EQ(std::future_status::timeout, f1.wait_for(1ns));
     },
     [&p1, &f2] {
       p1.set_value();
-      EXPECT_EQ(std::future_status::ready, f2.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, f2.wait_for(Async::kTestTimeout));
     },
   });
   this->runTasks();
@@ -80,7 +82,7 @@ TEST_F(ManagerTest, launchNested) {
 
       _manager->launch([promise = std::move(promise)]() mutable { promise.set_value(); });
 
-      EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+      EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
     },
   });
 
@@ -92,7 +94,7 @@ TEST_F(ManagerTest, stop) {
   this->addTasks({
     // We make the worker sleep for a short period of time so that when it wakes up, if the stop wasn't waiting for
     // all tasks to complete, it would access to a destroyed manager.
-    [] { std::this_thread::sleep_for(std::chrono::milliseconds(5)); },
+    [] { std::this_thread::sleep_for(5ms); },
   });
   _futures.clear(); // Don't wait for the task to finish before stopping.
   this->runTasks();
@@ -136,9 +138,9 @@ TEST_F(ManagerTest, multipleManagers) {
     });
   }
 
-  EXPECT_EQ(std::future_status::ready, managerA->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
-  EXPECT_EQ(std::future_status::ready, managerB->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
-  EXPECT_EQ(std::future_status::ready, managerC->stop().wait_for(std::chrono::milliseconds(Async::kTestTimeout)));
+  EXPECT_EQ(std::future_status::ready, managerA->stop().wait_for(Async::kTestTimeout));
+  EXPECT_EQ(std::future_status::ready, managerB->stop().wait_for(Async::kTestTimeout));
+  EXPECT_EQ(std::future_status::ready, managerC->stop().wait_for(Async::kTestTimeout));
 }
 
 } /* namespace Task */
