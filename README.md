@@ -1,8 +1,9 @@
-# TaskManager
-A C++ TaskManager aiming at easily managing asynchronous tasks using the features of the C++11/14
+![alt text](https://raw.githubusercontent.com/Tastyep/TaskManager/master/assets/task_manager_logo.png)
+
+TaskManager is an asynchronous task management library using the features of C++14.
 
 ### Requirements
-A compiler supporting the C++14 features
+A compiler supporting the C++14 features.
 
 ### Features
 ###### Components
@@ -26,7 +27,7 @@ auto manager = Task::Module::makeManager(1);
 auto future = manager.launch([] { return 42; });
 
 // Get the result from the future and print it.
-std::cout << future.get() << std::endl;
+std::cout << future.get() << std::endl; // Prints 42
 
 // Not necessary here, but the stop method ensures that all launched tasks have been executed.
 manager.stop().get();
@@ -46,12 +47,12 @@ auto scheduler = Task::Module::makeScheduler(1);
 size_t n = 0;
 
 // Add new tasks and get the future.
-scheduler.scheduleIn("Task1", std::chrono::seconds(2), [&n] { n++; });
-auto future = scheduler.scheduleIn("Task2", std::chrono::seconds(1), [&n] { n = 41 });
+auto future = scheduler.scheduleIn("Task1", std::chrono::seconds(2), [&n] { n++; });
+scheduler.scheduleIn("Task2", std::chrono::seconds(1), [&n] { n = 41 });
 
 // Get the future and print the updated value.
 future.get()
-std::cout << n << std::endl;
+std::cout << n << std::endl; // Prints 42
 
 // Not necessary here, but the stop method ensures that all the scheduled tasks have been executed.
 scheduler.stop().get();
