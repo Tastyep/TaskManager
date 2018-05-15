@@ -19,14 +19,14 @@ void init(size_t workerCount) {
   _threadpool = std::make_shared<Detail::Threadpool>(workerCount);
 }
 
-std::shared_ptr<Manager> makeManager(size_t workerCount) {
+std::unique_ptr<Manager> makeManager(size_t workerCount) {
   assert(_threadpool);
-  return std::make_shared<Manager>(_threadpool, workerCount);
+  return std::make_unique<Manager>(_threadpool, workerCount);
 }
 
-std::shared_ptr<Scheduler> makeScheduler(size_t workerCount) {
+std::unique_ptr<Scheduler> makeScheduler(size_t workerCount) {
   assert(_threadpool);
-  return std::make_shared<Scheduler>(_threadpool, workerCount);
+  return std::make_unique<Scheduler>(_threadpool, workerCount);
 }
 
 } /* namespace Module */

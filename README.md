@@ -24,7 +24,7 @@ Task::Module::init(2);
 auto manager = Task::Module::makeManager(1);
 
 // Add a new task and get its future.
-auto future = manager.launch([] { return 42; });
+auto future = manager.push([] { return 42; });
 
 // Get the result from the future and print it.
 std::cout << future.get() << std::endl; // Prints 42

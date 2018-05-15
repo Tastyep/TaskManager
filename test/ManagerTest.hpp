@@ -36,13 +36,13 @@ class ManagerTest : public Test {
 
     for (size_t i = 0; i < managerWorkersCount; ++i) {
       auto task = [this] { EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(Async::kTestTimeout)); };
-      _manager->launch(std::move(task));
+      _manager->push(std::move(task));
     }
   }
 
   void addTasks(std::vector<std::function<void()>>&& functors) {
     for (auto&& functor : functors) {
-      _futures.push_back(_manager->launch(functor));
+      _futures.push_back(_manager->push(functor));
     }
   }
   void runTasks() {
