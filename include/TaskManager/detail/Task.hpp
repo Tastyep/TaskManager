@@ -1,5 +1,5 @@
-#ifndef TASK_DETAIL_TASK_HPP
-#define TASK_DETAIL_TASK_HPP
+#ifndef TASK_MANAGER_DETAIL_TASK_MANAGER_HPP
+#define TASK_MANAGER_DETAIL_TASK_MANAGER_HPP
 
 #include <chrono>
 #include <functional>

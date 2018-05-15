@@ -1,14 +1,14 @@
-#ifndef TASK_DETAIL_THREAD_POOL_TEST_HH
-#define TASK_DETAIL_THREAD_POOL_TEST_HH
+#ifndef TASK_MANAGER_DETAIL_THREAD_POOL_TEST_HPP
+#define TASK_MANAGER_DETAIL_THREAD_POOL_TEST_HPP
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <future>
 
-#include "detail/Threadpool.hh"
+#include "test/Async.hpp"
 
-#include "test/Async.hh"
+#include "TaskManager/detail/Threadpool.hpp"
 
 using testing::Test;
 

@@ -1,5 +1,5 @@
-#ifndef TASK_TEST_ASYNC_HH
-#define TASK_TEST_ASYNC_HH
+#ifndef TASK_MANAGER_TEST_ASYNC_HPP
+#define TASK_MANAGER_TEST_ASYNC_HPP
 
 #include <chrono>
 

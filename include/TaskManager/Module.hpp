@@ -1,5 +1,5 @@
-#ifndef TASK_MODULE_HH
-#define TASK_MODULE_HH
+#ifndef TASK_MANAGER_MODULE_HPP
+#define TASK_MANAGER_MODULE_HPP
 
 #include <cstddef>
 #include <memory>

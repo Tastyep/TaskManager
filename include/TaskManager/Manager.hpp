@@ -1,5 +1,5 @@
-#ifndef TASK_MANAGER_HPP
-#define TASK_MANAGER_HPP
+#ifndef TASK_MANAGER_MANAGER_HPP
+#define TASK_MANAGER_MANAGER_HPP
 
 #include <cstddef>
 #include <functional>
@@ -8,8 +8,8 @@
 #include <queue>
 #include <utility>
 
-#include "detail/Task.hpp"
-#include "detail/Threadpool.hh"
+#include "TaskManager/detail/Task.hpp"
+#include "TaskManager/detail/Threadpool.hpp"
 
 namespace Task {
 

@@ -1,5 +1,5 @@
-#ifndef TASK_SCHEDULER_HH
-#define TASK_SCHEDULER_HH
+#ifndef TASK_MANAGER_SCHEDULER_HPP
+#define TASK_MANAGER_SCHEDULER_HPP
 
 #include <cstddef>
 #include <functional>
@@ -9,9 +9,9 @@
 #include <unordered_map>
 #include <utility>
 
-#include "detail/PriorityQueue.hpp"
-#include "detail/Task.hpp"
-#include "detail/Threadpool.hh"
+#include "TaskManager/detail/PriorityQueue.hpp"
+#include "TaskManager/detail/Task.hpp"
+#include "TaskManager/detail/Threadpool.hpp"
 
 namespace Task {
 

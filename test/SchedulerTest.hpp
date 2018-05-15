@@ -1,5 +1,5 @@
-#ifndef TASK_TEST_SCHEDULER_TEST_HH
-#define TASK_TEST_SCHEDULER_TEST_HH
+#ifndef TASK_MANAGER_TEST_SCHEDULER_TEST_HPP
+#define TASK_MANAGER_TEST_SCHEDULER_TEST_HPP
 
 #include "gtest/gtest.h"
 
@@ -7,10 +7,10 @@
 #include <utility>
 #include <vector>
 
-#include "test/Async.hh"
+#include "test/Async.hpp"
 
-#include "Scheduler.hh"
-#include "detail/Threadpool.hh"
+#include "TaskManager/Scheduler.hpp"
+#include "TaskManager/detail/Threadpool.hpp"
 
 using testing::Test;
 
@@ -39,9 +39,7 @@ class SchedulerTest : public Test {
 
     auto scheduler = std::make_shared<Scheduler>(_threadpool, schedulerWorkersCount);
     for (size_t i = 0; i < schedulerWorkersCount; ++i) {
-      auto task = [this] {
-        EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(Async::kTestTimeout));
-      };
+      auto task = [this] { EXPECT_EQ(std::future_status::ready, _lock.second.wait_for(Async::kTestTimeout)); };
       scheduler->scheduleIn("setup_" + std::to_string(i), -std::chrono::hours(1), std::move(task));
     }
 

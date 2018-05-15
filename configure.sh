@@ -30,9 +30,9 @@ function configure() {
   cmake \
     -DCMAKE_C_COMPILER="$CC" \
     -DCMAKE_CXX_COMPILER="$CXX" \
-    -DBUILD_TYPE="$TASK_MANAGER_BUILD_TYPE" \
-    -DTASK_MANAGER_ENABLE_CLANGTIDY="$TASK_MANAGER_ENABLE_CLANGTIDY" \
-    -DTASK_MANAGER_BUILD_TESTS="$TASK_MANAGER_BUILD_TESTS" \
+    -DBUILD_TYPE="$TASK_MANAGER_MANAGER_BUILD_TYPE" \
+    -DTASK_MANAGER_MANAGER_ENABLE_CLANGTIDY="$TASK_MANAGER_MANAGER_ENABLE_CLANGTIDY" \
+    -DTASK_MANAGER_MANAGER_BUILD_TESTS="$TASK_MANAGER_MANAGER_BUILD_TESTS" \
     "$ROOT_DIR"
 }
 
@@ -48,11 +48,11 @@ while [[ $# -gt 0 ]]; do
     shift
     ;;
   -t | --test)
-    TASK_MANAGER_BUILD_TESTS="ON"
+    TASK_MANAGER_MANAGER_BUILD_TESTS="ON"
     shift
     ;;
   -y | --tidy)
-    TASK_MANAGER_ENABLE_CLANGTIDY="ON"
+    TASK_MANAGER_MANAGER_ENABLE_CLANGTIDY="ON"
     shift
     ;;
   -*)
@@ -63,7 +63,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Prevent use of clang-only options with other compilers
-if [[ "$TASK_MANAGER_ENABLE_CLANGTIDY" == "ON" && "$CXX" != "clang++" ]]; then
+if [[ "$TASK_MANAGER_MANAGER_ENABLE_CLANGTIDY" == "ON" && "$CXX" != "clang++" ]]; then
   echo -e "cannot use clang-tidy if compiler is not clang"
   usage
 fi

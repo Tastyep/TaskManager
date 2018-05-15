@@ -1,4 +1,4 @@
-#include "test/detail/PriorityQueueTest.hh"
+#include "test/detail/PriorityQueueTest.hpp"
 
 namespace Task {
 namespace Detail {

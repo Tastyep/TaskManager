@@ -1,15 +1,15 @@
-#ifndef TASK_TEST_MANAGER_TEST_HH
-#define TASK_TEST_MANAGER_TEST_HH
+#ifndef TASK_MANAGER_TEST_MANAGER_TEST_HPP
+#define TASK_MANAGER_TEST_MANAGER_TEST_HPP
 
 #include "gtest/gtest.h"
 
 #include <functional>
 #include <vector>
 
-#include "test/Async.hh"
+#include "test/Async.hpp"
 
-#include "Manager.hh"
-#include "detail/Threadpool.hh"
+#include "TaskManager/Manager.hpp"
+#include "TaskManager/detail/Threadpool.hpp"
 
 using testing::Test;
 

@@ -1,4 +1,4 @@
-#include "test/SchedulerTest.hh"
+#include "test/SchedulerTest.hpp"
 
 #include <atomic>
 
