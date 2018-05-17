@@ -189,6 +189,49 @@ TEST_F(SchedulerTest, checkTaskIsScheduled) {
   this->runTasks();
 }
 
+TEST_F(SchedulerTest, checkTaskIsScheduledWhileRunning) {
+  auto threadpool = std::make_shared<Detail::Threadpool>(1);
+  auto scheduler = std::make_shared<Scheduler>(threadpool, 1);
+  std::promise<void> pIn;
+  std::promise<void> pOut;
+  auto fIn = pIn.get_future();
+  auto fOut = pOut.get_future();
+
+  scheduler->scheduleIn("0", 0us, [&pIn, &fOut] {
+    pIn.set_value();
+    EXPECT_EQ(std::future_status::ready, fOut.wait_for(Async::kTestTimeout));
+  });
+
+  EXPECT_EQ(std::future_status::ready, fIn.wait_for(Async::kTestTimeout));
+  // Check that the task is not considered as scheduled when being executed by a worker of the pool.
+  EXPECT_FALSE(scheduler->isScheduled("0"));
+  pOut.set_value();
+
+  scheduler->stop().get();
+}
+
+TEST_F(SchedulerTest, checkPeriodicTaskIsScheduledWhileRunning) {
+  auto threadpool = std::make_shared<Detail::Threadpool>(1);
+  auto scheduler = std::make_shared<Scheduler>(threadpool, 1);
+  std::promise<void> pIn;
+  std::promise<void> pOut;
+  auto fIn = pIn.get_future();
+  auto fOut = pOut.get_future();
+
+  scheduler->scheduleEvery("0", 1ms, [&pIn, &fOut] {
+    pIn.set_value();
+    EXPECT_EQ(std::future_status::ready, fOut.wait_for(Async::kTestTimeout));
+  });
+
+  EXPECT_EQ(std::future_status::ready, fIn.wait_for(Async::kTestTimeout));
+  // Check that the task is still considered as scheduled when being executed by a worker of the pool.
+  EXPECT_TRUE(scheduler->isScheduled("0"));
+
+  auto stop = scheduler->stop();
+  pOut.set_value();
+  EXPECT_EQ(std::future_status::ready, stop.wait_for(Async::kTestTimeout));
+}
+
 TEST_F(SchedulerTest, stopAndDiscard) {
   size_t n = 0;
 

@@ -63,7 +63,7 @@ class Scheduler {
       }
     };
     std::lock_guard<std::mutex> guard(_mutex);
-    this->addTask(id, std::move(functor), timepoint);
+    this->addTask(_hasher(id), std::move(functor), timepoint);
 
     return future;
   }
@@ -76,23 +76,24 @@ class Scheduler {
   template <typename Duration, class F, class... Args>
   void scheduleEvery(const std::string& id, Duration delay, F&& function, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
+    const auto hash = _hasher(id);
 
-    auto periodicTask = [this, id, task = std::move(task), delay]() {
+    auto periodicTask = [this, hash, task = std::move(task), delay]() mutable {
       task();
 
       {
         std::lock_guard<std::mutex> guard(_mutex);
 
         --_workerCount;
-        auto periodicTask = _periodicTasks.find(id);
+        auto periodicTask = _periodicTasks.find(hash);
         if (periodicTask == _periodicTasks.end()) {
           return;
         }
-        this->addTask(id, periodicTask->second, Detail::Clock::now() + delay);
+        this->addTask(hash, periodicTask->second, Detail::Clock::now() + delay);
       }
     };
     std::lock_guard<std::mutex> guard(_mutex);
-    this->addTask(id, std::move(periodicTask), Detail::Clock::now() + delay, true);
+    this->addTask(hash, std::move(periodicTask), Detail::Clock::now() + delay, true);
   }
 
   //! Remove a task from the scheduler.
@@ -123,14 +124,13 @@ class Scheduler {
   };
 
  private:
-  void addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint,
-               bool reschedulable = false);
+  void addTask(size_t hash, std::function<void()> functor, Detail::Timepoint timepoint, bool reschedulable = false);
   void processTasks();
 
  private:
   std::shared_ptr<Detail::Threadpool> _threadpool;
   Detail::PriorityQueue<TimedTask, std::greater<>> _tasks;
-  std::unordered_map<std::string, std::function<void()>> _periodicTasks;
+  std::unordered_map<size_t, std::function<void()>> _periodicTasks;
   std::hash<std::string> _hasher;
   mutable std::mutex _mutex;
   size_t _maxWorkers;
