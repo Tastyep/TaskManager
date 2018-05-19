@@ -35,11 +35,12 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-trusty-6.0
           packages:
-            - clang-tidy-5.0
+            - clang-tidy-6.0
+            - clang-6.0
       env:
-        - COMPILER=clang-tidy-5.0 COMPILER_ID=clang-tidy
+        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 COMPILER_ID=clang-tidy
 
 install:
   - export "CXX=$COMPILER";
@@ -48,4 +49,4 @@ install:
 script:
   - if [[ "$COMPILER_ID" == "clang" ]]; then (pwd && ./configure.sh -c -t && cd ./build && make -j8 && ./TaskManager-tester); fi
   - if [[ "$COMPILER_ID" == "gcc" ]]; then (pwd && ./configure.sh -t && cd ./build && make -j8 && ./TaskManager-tester); fi
-  - if [[ "$COMPILER_ID" == "clang-tidy" ]]; then (pwd && ./configure.sh -c -y && cd ./build && make clang-tidy); fi
+  - if [[ "$COMPILER_ID" == "clang-tidy" ]]; then (pwd && ./configure.sh -c -y && cd ./build && make -j8 && make clang-tidy); fi

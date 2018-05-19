@@ -9,13 +9,16 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 include(FindPackageHandleStandardArgs)
 
+set(CLANG_TIDY_SCRIPT "run-clang-tidy.py")
 find_program(ClangTidy_EXECUTABLE NAMES clang-tidy HINTS ${ClangTidy_HINT_PATH})
 if(ClangTidy_EXECUTABLE)
   execute_process(COMMAND ${ClangTidy_EXECUTABLE} --version OUTPUT_VARIABLE ClangTidy_VERSION)
 
   find_program(RunClangTidy_EXECUTABLE NAMES run-clang-tidy.py)
-  if(RunClangTidy_EXECUTABLE)
-    set(ClangTidy_FOUND)
+  if(NOT RunClangTidy_EXECUTABLE)
+    include(ResolveClangTidy)
+    set(RunClangTidy_EXECUTABLE ${CLANG_TIDY_SCRIPT_DIR}/${CLANG_TIDY_SCRIPT})
+    message(STATUS "[clang-tidy] Using script ${RunClangTidy_EXECUTABLE}")
   endif()
 endif()
 
