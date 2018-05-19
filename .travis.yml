@@ -15,9 +15,7 @@ matrix:
       addons:
         apt:
           sources:
-            - deadsnakes
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-4.0
           packages:
             - g++-6
       env:
@@ -26,17 +24,28 @@ matrix:
       addons:
         apt:
           sources:
-            - deadsnakes
             - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
       env:
         - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 COMPILER_ID=clang
+    - compiler: clang-tidy
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-tidy-5.0
+      env:
+        - COMPILER=clang-tidy-5.0 COMPILER_ID=clang-tidy
 
 install:
-  "export CXX=$COMPILER"
+  - export "CXX=$COMPILER";
+  - whereis run-clang-tidy.py;
 
 script:
   - if [[ "$COMPILER_ID" == "clang" ]]; then (pwd && ./configure.sh -c -t && cd ./build && make -j8 && ./TaskManager-tester); fi
   - if [[ "$COMPILER_ID" == "gcc" ]]; then (pwd && ./configure.sh -t && cd ./build && make -j8 && ./TaskManager-tester); fi
+  - if [[ "$COMPILER_ID" == "clang-tidy" ]]; then (pwd && ./configure.sh -c -y && cd ./build && make clang-tidy); fi
