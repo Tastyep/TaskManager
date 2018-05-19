@@ -3,7 +3,7 @@ include(CheckCompilerFlags)
 # Check and define C compiler flags
 check_cxx_compiler_flags(
   FLAGS
-  "-std=c++1y"
+  "-std=c++14"
   "-Wall" "-pedantic" "-Wextra"
   "-Wcast-align"
   "-Wcast-qual" "-Wconversion"

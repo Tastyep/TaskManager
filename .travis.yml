@@ -1,0 +1,42 @@
+# This file configures the build and run environment on https://travis-ci.org/
+
+# Specify the operating systems on which to test for.
+os:
+  - linux
+
+# For details on building a C++ project see: https://docs.travis-ci.com/user/languages/cpp/
+sudo: required
+dist: trusty
+language: cpp
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - deadsnakes
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - g++-6
+      env:
+        - COMPILER=g++-6 C_COMPILER=gcc-6 COMPILER_ID=gcc
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - deadsnakes
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - clang-6.0
+      env:
+        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 COMPILER_ID=clang
+
+install:
+  "export CXX=$COMPILER"
+
+script:
+  - if [[ "$COMPILER_ID" == "clang" ]]; then (pwd && ./configure.sh -c -t && cd ./build && make -j8 && ./TaskManager-tester); fi
+  - if [[ "$COMPILER_ID" == "gcc" ]]; then (pwd && ./configure.sh -t && cd ./build && make -j8 && ./TaskManager-tester); fi
