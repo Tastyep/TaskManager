@@ -1,6 +1,6 @@
 message(STATUS "Configuring third party libraries")
 
-if(TASK_MANAGER_MANAGER_BUILD_TESTS)
+if(TASK_MANAGER_BUILD_TESTS)
   include(ResolveGTest)
 endif()
 
