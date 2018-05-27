@@ -1,15 +1,15 @@
-#include "test/ManagerTest.hh"
+#include "test/ManagerTest.hpp"
 
 using namespace std::chrono_literals;
 
 namespace Task {
 
-TEST_F(ManagerTest, launchOne) {
+TEST_F(ManagerTest, pushOne) {
   this->setup(1, 1);
   this->runTasks(); // This makes a task for blocking the manager.
 }
 
-TEST_F(ManagerTest, launchMultipleSequentially) {
+TEST_F(ManagerTest, pushMultipleSequentially) {
   size_t i = 0;
 
   this->setup(1, 1);
@@ -23,7 +23,7 @@ TEST_F(ManagerTest, launchMultipleSequentially) {
   EXPECT_EQ(9, i);
 }
 
-TEST_F(ManagerTest, launchMultipleInParallel) {
+TEST_F(ManagerTest, pushMultipleInParallel) {
   this->setup(3, 3);
   for (size_t j = 0; j < 10; ++j) {
     this->addTasks({
@@ -33,7 +33,7 @@ TEST_F(ManagerTest, launchMultipleInParallel) {
   this->runTasks();
 }
 
-TEST_F(ManagerTest, launchDependentInParallel) {
+TEST_F(ManagerTest, pushDependentInParallel) {
   std::promise<void> p1;
   std::promise<void> p2;
   auto f1 = p1.get_future();
@@ -53,7 +53,7 @@ TEST_F(ManagerTest, launchDependentInParallel) {
   this->runTasks();
 }
 
-TEST_F(ManagerTest, launchDependentSequentially) {
+TEST_F(ManagerTest, pushDependentSequentially) {
   std::promise<void> p1;
   std::promise<void> p2;
   auto f1 = p1.get_future();
@@ -73,14 +73,14 @@ TEST_F(ManagerTest, launchDependentSequentially) {
   this->runTasks();
 }
 
-TEST_F(ManagerTest, launchNested) {
+TEST_F(ManagerTest, pushNested) {
   this->setup(2, 2);
   this->addTasks({
     [this] {
       std::promise<void> promise;
       auto future = promise.get_future();
 
-      _manager->launch([promise = std::move(promise)]() mutable { promise.set_value(); });
+      _manager->push([promise = std::move(promise)]() mutable { promise.set_value(); });
 
       EXPECT_EQ(std::future_status::ready, future.wait_for(Async::kTestTimeout));
     },
@@ -100,12 +100,12 @@ TEST_F(ManagerTest, stop) {
   this->runTasks();
 }
 
-TEST_F(ManagerTest, launchOnStopped) {
+TEST_F(ManagerTest, pushOnStopped) {
   auto threadpool = std::make_shared<Detail::Threadpool>(2);
   auto manager = std::make_shared<Manager>(threadpool, 1);
 
   manager->stop().get();
-  auto future = manager->launch([] { return true; });
+  auto future = manager->push([] { return true; });
 
   EXPECT_TRUE(future.valid());
   EXPECT_THROW(future.get(), std::future_error);
@@ -121,17 +121,17 @@ TEST_F(ManagerTest, multipleManagers) {
   std::promise<void> p3;
 
   for (size_t i = 0; i < 10; ++i) {
-    managerA->launch([&p1, &p2] {
+    managerA->push([&p1, &p2] {
       p2.set_value();
       p1.get_future().get();
       p1 = std::promise<void>();
     });
-    managerB->launch([&p2, &p3] {
+    managerB->push([&p2, &p3] {
       p2.get_future().get();
       p2 = std::promise<void>();
       p3.set_value();
     });
-    managerC->launch([&p3, &p1] {
+    managerC->push([&p3, &p1] {
       p3.get_future().get();
       p3 = std::promise<void>();
       p1.set_value();

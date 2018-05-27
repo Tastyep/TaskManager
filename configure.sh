@@ -10,8 +10,8 @@ ROOT_DIR="$(
 BUILD_DIR="$ROOT_DIR/build"
 
 # Program options
-CXX="g++"
-CC="gcc"
+CXX=${CXX:-"g++"}
+CC=${CC:-"gcc"}
 
 function usage() {
   echo -e "Usage:\n$0 [options]"
@@ -20,6 +20,7 @@ function usage() {
   echo -e "  -h,--help                    Display this help message"
   echo -e "  -c,--clang                   Use clang as compiler"
   echo -e "  -t,--test                    Enable the testing target"
+  echo -e "     --cov                     Enable the coverage"
   echo -e "\nClang-specific options:"
   echo -e "  -y,--tidy                    Enable clang-tidy static analysis target"
   echo
@@ -33,6 +34,7 @@ function configure() {
     -DBUILD_TYPE="$TASK_MANAGER_BUILD_TYPE" \
     -DTASK_MANAGER_ENABLE_CLANGTIDY="$TASK_MANAGER_ENABLE_CLANGTIDY" \
     -DTASK_MANAGER_BUILD_TESTS="$TASK_MANAGER_BUILD_TESTS" \
+    -DTASK_MANAGER_ENABLE_COVERAGE="$TASK_MANAGER_ENABLE_COVERAGE" \
     "$ROOT_DIR"
 }
 
@@ -53,6 +55,10 @@ while [[ $# -gt 0 ]]; do
     ;;
   -y | --tidy)
     TASK_MANAGER_ENABLE_CLANGTIDY="ON"
+    shift
+    ;;
+  --cov)
+    TASK_MANAGER_ENABLE_COVERAGE="ON"
     shift
     ;;
   -*)

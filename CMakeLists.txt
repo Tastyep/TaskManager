@@ -9,6 +9,7 @@ set(MODULE_DIR cmake)
 set(SOURCE_DIR src)
 set(INCLUDE_DIR include)
 set(LIB_DIR lib)
+set(LIB_INCLUDE_DIR "${INCLUDE_DIR}/${PROJECT_NAME}")
 set(TEST_DIR test)
 set(IMPLEMENTATION_DIR detail)
 set(TESTER_NAME "${PROJECT_NAME}-tester")
@@ -41,21 +42,26 @@ include(Sources)
 include_directories (${PROJECT_SOURCE_DIR})
 include_directories (${PROJECT_SOURCE_DIR}/${INCLUDE_DIR})
 
+# Add required unix libraries
 add_library(${LIB_NAME} STATIC ${LIB_SOURCE_FILES})
-
-if(TASK_MANAGER_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  include(EnableClangTidy)
-  enable_clangtidy(SOURCES "${LIB_SOURCE_FILES}")
-endif()
 
 if(TASK_MANAGER_BUILD_TESTS)
   include(EnableTests)
 endif()
 
+if(TASK_MANAGER_ENABLE_CLANGTIDY AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  include(EnableClangTidy)
+  enable_clangtidy(SOURCES "${PROJECT_SOURCE_DIR}/${SOURCE_DIR}")
+endif()
+
+if(TASK_MANAGER_ENABLE_COVERAGE)
+  include(EnableTestCoverage)
+  add_coverage_flags(TARGETS ${BIN_NAME} ${LIB_NAME})
+endif()
+
 
 install(TARGETS ${LIB_NAME} DESTINATION ${LIB_DIR})
-install(FILES ${LIB_EXPOSED_HEADER_FILES} DESTINATION "${INCLUDE_DIR}/${PROJECT_NAME}")
-install(DIRECTORY ${LIB_REQUIRED_DIRS} DESTINATION "${INCLUDE_DIR}/${PROJECT_NAME}")
+install(DIRECTORY ${LIB_INCLUDE_DIR} DESTINATION ${INCLUDE_DIR})
 
 set(TASK_MANAGER_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/${INCLUDE_DIR})
 set(TASK_MANAGER_INCLUDE_DIRS ${TASK_MANAGER_INCLUDE_DIR} )

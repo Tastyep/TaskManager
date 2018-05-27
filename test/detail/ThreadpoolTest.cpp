@@ -1,4 +1,4 @@
-#include "test/detail/ThreadpoolTest.hh"
+#include "test/detail/ThreadpoolTest.hpp"
 
 namespace Task {
 namespace Detail {

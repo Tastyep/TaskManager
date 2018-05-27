@@ -1,6 +1,4 @@
-#include "Scheduler.hh"
-
-#include <iostream>
+#include "TaskManager/Scheduler.hpp"
 
 namespace Task {
 
@@ -52,21 +50,22 @@ void Scheduler::remove(const std::string& id) {
 
 bool Scheduler::isScheduled(const std::string& id) const {
   std::lock_guard<std::mutex> guard(_mutex);
+  const size_t hash = _hasher(id);
+  const TimedTask task(hash);
 
-  return _tasks.contain(TimedTask(_hasher(id)));
+  return _tasks.contain(task) || _periodicTasks.find(hash) != _periodicTasks.end();
 }
 
 // Private methods
 
-void Scheduler::addTask(const std::string& id, std::function<void()> functor, Detail::Timepoint timepoint,
-                        bool reschedulable) {
+void Scheduler::addTask(size_t hash, std::function<void()> functor, Detail::Timepoint timepoint, bool reschedulable) {
   if (_stopped) {
     return;
   }
   if (reschedulable) {
-    _periodicTasks[id] = functor;
+    _periodicTasks[hash] = functor;
   }
-  _tasks.emplace(_hasher(id), std::move(functor), timepoint);
+  _tasks.emplace(hash, std::move(functor), timepoint);
   this->processTasks();
 }
 
@@ -74,11 +73,12 @@ void Scheduler::processTasks() {
   if (_tasks.empty() || _workerCount == _maxWorkers) {
     return;
   }
-  auto task = std::move(_tasks.top());
+  auto task = _tasks.top();
   _tasks.pop();
 
   ++_workerCount;
-  _threadpool->execute(task);
+  // NOTE: Use static_cast instead of std::move to avoid slicing warning from clang-tidy.
+  _threadpool->execute(static_cast<Detail::TimedTask&&>(task));
 }
 
 } /* namespace Task */

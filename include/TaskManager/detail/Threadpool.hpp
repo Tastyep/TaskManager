@@ -1,5 +1,5 @@
-#ifndef TASK_DETAIL_THREADPOOL_HH
-#define TASK_DETAIL_THREADPOOL_HH
+#ifndef TASK_MANAGER_DETAIL_THREADPOOL_HPP
+#define TASK_MANAGER_DETAIL_THREADPOOL_HPP
 
 #include <algorithm>
 #include <condition_variable>
@@ -9,14 +9,14 @@
 #include <thread>
 #include <vector>
 
-#include "detail/Task.hpp"
+#include "TaskManager/detail/Task.hpp"
 
 namespace Task {
 namespace Detail {
 
 class Threadpool {
  public:
-  Threadpool(size_t threadCount);
+  explicit Threadpool(size_t threadCount);
   ~Threadpool();
 
   void execute(TimedTask task);
