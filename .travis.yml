@@ -19,17 +19,17 @@ matrix:
           packages:
             - g++-6
       env:
-        - COMPILER=g++-6 C_COMPILER=gcc-6 COMPILER_ID=gcc
+        - COMPILER=g++-6 C_COMPILER=gcc-6 STEP=gcc
     - compiler: clang
       addons:
         apt:
           sources:
-            - ubuntu-toolchain-r-test
             - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test
           packages:
             - clang-6.0
       env:
-        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 COMPILER_ID=clang
+        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 STEP=clang
     - compiler: clang-tidy
       addons:
         apt:
@@ -40,13 +40,22 @@ matrix:
             - clang-tidy-6.0
             - clang-6.0
       env:
-        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 COMPILER_ID=clang-tidy
+        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 STEP=clang-tidy
 
 install:
+  - export "SOURCE_ROOT=${TRAVIS_BUILD_DIR}" "BUILD_ROOT=${TRAVIS_BUILD_DIR}/build"
   - export "CXX=$COMPILER";
-  - whereis run-clang-tidy.py;
+
+before_script:
+  - mkdir -p ${BUILD_ROOT} && cd ${BUILD_ROOT}
 
 script:
-  - if [[ "$COMPILER_ID" == "clang" ]]; then (pwd && ./configure.sh -c -t && cd ./build && make -j8 && ./TaskManager-tester); fi
-  - if [[ "$COMPILER_ID" == "gcc" ]]; then (pwd && ./configure.sh -t && cd ./build && make -j8 && ./TaskManager-tester); fi
-  - if [[ "$COMPILER_ID" == "clang-tidy" ]]; then (pwd && ./configure.sh -c -y && cd ./build && make -j8 && make clang-tidy); fi
+  - if [[ "$STEP" == "clang" ]]; then
+        (../configure.sh -c -t && make -j8 && ./TaskManager-tester);
+    fi
+  - if [[ "$STEP" == "gcc" ]]; then
+      (../configure.sh -t && make -j8 && ./TaskManager-tester);
+    fi
+  - if [[ "$STEP" == "clang-tidy" ]]; then
+      (../configure.sh -c -y && make -j8 && make clang-tidy);
+    fi
