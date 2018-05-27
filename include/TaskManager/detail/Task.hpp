@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <functional>
+#include <utility>
 
 namespace Task {
 namespace Detail {
@@ -13,8 +14,8 @@ using Timepoint = Clock::time_point;
 
 class TimedTask {
  public:
-  TimedTask(Task functor, Timepoint timepoint)
-    : _functor(functor)
+  TimedTask(Task functor, const Timepoint& timepoint)
+    : _functor(std::move(functor))
     , _timepoint(timepoint) {}
 
   const Timepoint& timepoint() const {

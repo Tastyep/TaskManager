@@ -15,6 +15,8 @@
 
 namespace Task {
 
+using Duration = std::chrono::nanoseconds;
+
 //! The task scheduler.
 class Scheduler {
  public:
@@ -33,7 +35,7 @@ class Scheduler {
   //! @param delay The delay to wait before executing the task.
   //! @param function The function to execute.
   //! @param args the parameters to pass to the function.
-  template <typename Duration, class F, class... Args>
+  template <class F, class... Args>
   auto scheduleIn(const std::string& id, Duration delay, F&& function, Args&&... args) {
     return this->scheduleAt(id, Detail::Clock::now() + delay, std::forward<F>(function), std::forward<Args>(args)...);
   }
@@ -73,7 +75,7 @@ class Scheduler {
   //! @param delay The minimum duration separating two executions.
   //! @param function The function to execute.
   //! @param args the parameters to pass to the function.
-  template <typename Duration, class F, class... Args>
+  template <class F, class... Args>
   void scheduleEvery(const std::string& id, Duration delay, F&& function, Args&&... args) {
     auto task = std::bind(std::forward<F>(function), std::forward<Args>(args)...);
     const auto hash = _hasher(id);
