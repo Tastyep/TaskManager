@@ -1,5 +1,7 @@
 ![alt text](https://raw.githubusercontent.com/Tastyep/TaskManager/master/assets/task_manager_logo.png)
 
+[![Build Status](https://travis-ci.org/Tastyep/TaskManager.svg?branch=master)](https://travis-ci.org/Tastyep/TaskManager)
+
 TaskManager is an asynchronous task management library using the features of C++14.
 
 ### Requirements
@@ -16,6 +18,9 @@ A compiler supporting the C++14 features.
 
 ### Basic Usage
 ###### Manager
+
+Note: The following examples use chrono literals.
+
 ```C++
 // Create the thread pool with the initial number of threads (2 here).
 Task::Module::init(2);
@@ -47,8 +52,8 @@ auto scheduler = Task::Module::makeScheduler(1);
 size_t n = 0;
 
 // Add new tasks and get the future.
-auto future = scheduler.scheduleIn("Task1", std::chrono::seconds(2), [&n] { n++; });
-scheduler.scheduleIn("Task2", std::chrono::seconds(1), [&n] { n = 41 });
+auto future = scheduler.scheduleIn("Task1", 2s, [&n] { n++; });
+scheduler.scheduleIn("Task2", 1s, [&n] { n = 41 });
 
 // Get the future and print the updated value.
 future.get()
