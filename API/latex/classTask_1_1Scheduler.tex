@@ -1,0 +1,148 @@
+\hypertarget{classTask_1_1Scheduler}{}\section{Task\+:\+:Scheduler Class Reference}
+\label{classTask_1_1Scheduler}\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+
+
+The task scheduler.  
+
+
+
+
+{\ttfamily \#include $<$Scheduler.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classTask_1_1Scheduler_a5ea9aca03803b6d0ee786841b8e49759}{Scheduler} (std\+::shared\+\_\+ptr$<$ \hyperlink{classTask_1_1Detail_1_1Threadpool}{Detail\+::\+Threadpool} $>$ threadpool, size\+\_\+t max\+Workers)
+\item 
+std\+::future$<$ void $>$ \hyperlink{classTask_1_1Scheduler_ae8b5e676c81dc9ed81e5ff0e03830d5f}{stop} (bool discard=false)
+\item 
+{\footnotesize template$<$class F , class... Args$>$ }\\auto \hyperlink{classTask_1_1Scheduler_a18f292492bf81fe40dc0b2c738c675f8}{schedule\+In} (const std\+::string \&id, Duration delay, F \&\&function, Args \&\&... args)
+\item 
+{\footnotesize template$<$class F , class... Args$>$ }\\auto \hyperlink{classTask_1_1Scheduler_a02811a81c637db4cf27261c58e1a7060}{schedule\+At} (const std\+::string \&id, Detail\+::\+Timepoint timepoint, F \&\&function, Args \&\&... args) -\/$>$ std\+::future$<$ typename std\+::result\+\_\+of$<$ F(Args...)$>$\+::type $>$
+\item 
+{\footnotesize template$<$class F , class... Args$>$ }\\void \hyperlink{classTask_1_1Scheduler_a00149af09fa04110105ba575bc7e88fe}{schedule\+Every} (const std\+::string \&id, Duration delay, F \&\&function, Args \&\&... args)
+\item 
+void \hyperlink{classTask_1_1Scheduler_a054abc32dfe84571e2591cee11de2ab1}{remove} (const std\+::string \&id)
+\item 
+bool \hyperlink{classTask_1_1Scheduler_a50bb4dbf7d2d232d6ebc6a109166e4ab}{is\+Scheduled} (const std\+::string \&id) const
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The task scheduler. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classTask_1_1Scheduler_a5ea9aca03803b6d0ee786841b8e49759}\label{classTask_1_1Scheduler_a5ea9aca03803b6d0ee786841b8e49759}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!Scheduler@{Scheduler}}
+\index{Scheduler@{Scheduler}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{Scheduler()}{Scheduler()}}
+{\footnotesize\ttfamily Task\+::\+Scheduler\+::\+Scheduler (\begin{DoxyParamCaption}\item[{std\+::shared\+\_\+ptr$<$ \hyperlink{classTask_1_1Detail_1_1Threadpool}{Detail\+::\+Threadpool} $>$}]{threadpool,  }\item[{size\+\_\+t}]{max\+Workers }\end{DoxyParamCaption})}
+
+Task scheduler constructor. 
+\begin{DoxyParams}{Parameters}
+{\em threadpool} & The threadpool owning the workers. \\
+\hline
+{\em max\+Workers} & The maximum number of parallel executions. \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classTask_1_1Scheduler_a50bb4dbf7d2d232d6ebc6a109166e4ab}\label{classTask_1_1Scheduler_a50bb4dbf7d2d232d6ebc6a109166e4ab}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!is\+Scheduled@{is\+Scheduled}}
+\index{is\+Scheduled@{is\+Scheduled}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{is\+Scheduled()}{isScheduled()}}
+{\footnotesize\ttfamily bool Task\+::\+Scheduler\+::is\+Scheduled (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{id }\end{DoxyParamCaption}) const}
+
+Check if a task is scheduled. 
+\begin{DoxyParams}{Parameters}
+{\em id} & The unique identity of the task. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+{\ttfamily true} if it is scheduled, {\ttfamily false} otherwise. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classTask_1_1Scheduler_a054abc32dfe84571e2591cee11de2ab1}\label{classTask_1_1Scheduler_a054abc32dfe84571e2591cee11de2ab1}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!remove@{remove}}
+\index{remove@{remove}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{remove()}{remove()}}
+{\footnotesize\ttfamily void Task\+::\+Scheduler\+::remove (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{id }\end{DoxyParamCaption})}
+
+Remove a task from the scheduler. 
+\begin{DoxyParams}{Parameters}
+{\em id} & The unique identity of the task. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classTask_1_1Scheduler_a02811a81c637db4cf27261c58e1a7060}\label{classTask_1_1Scheduler_a02811a81c637db4cf27261c58e1a7060}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!schedule\+At@{schedule\+At}}
+\index{schedule\+At@{schedule\+At}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{schedule\+At()}{scheduleAt()}}
+{\footnotesize\ttfamily template$<$class F , class... Args$>$ \\
+auto Task\+::\+Scheduler\+::schedule\+At (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{id,  }\item[{Detail\+::\+Timepoint}]{timepoint,  }\item[{F \&\&}]{function,  }\item[{Args \&\&...}]{args }\end{DoxyParamCaption}) -\/$>$ std\+::future$<$typename std\+::result\+\_\+of$<$F(Args...)$>$\+::type$>$ \hspace{0.3cm}{\ttfamily [inline]}}
+
+Add a new task to the scheduler. 
+\begin{DoxyParams}{Parameters}
+{\em id} & The unique identity of the task. \\
+\hline
+{\em timepoint} & The timepoint to reach before executing the task. \\
+\hline
+{\em function} & The function to execute. \\
+\hline
+{\em args} & the parameters to pass to the function. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classTask_1_1Scheduler_a00149af09fa04110105ba575bc7e88fe}\label{classTask_1_1Scheduler_a00149af09fa04110105ba575bc7e88fe}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!schedule\+Every@{schedule\+Every}}
+\index{schedule\+Every@{schedule\+Every}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{schedule\+Every()}{scheduleEvery()}}
+{\footnotesize\ttfamily template$<$class F , class... Args$>$ \\
+void Task\+::\+Scheduler\+::schedule\+Every (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{id,  }\item[{Duration}]{delay,  }\item[{F \&\&}]{function,  }\item[{Args \&\&...}]{args }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Add a new periodic task to the scheduler. 
+\begin{DoxyParams}{Parameters}
+{\em id} & The unique identity of the task. \\
+\hline
+{\em delay} & The minimum duration separating two executions. \\
+\hline
+{\em function} & The function to execute. \\
+\hline
+{\em args} & the parameters to pass to the function. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classTask_1_1Scheduler_a18f292492bf81fe40dc0b2c738c675f8}\label{classTask_1_1Scheduler_a18f292492bf81fe40dc0b2c738c675f8}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!schedule\+In@{schedule\+In}}
+\index{schedule\+In@{schedule\+In}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{schedule\+In()}{scheduleIn()}}
+{\footnotesize\ttfamily template$<$class F , class... Args$>$ \\
+auto Task\+::\+Scheduler\+::schedule\+In (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{id,  }\item[{Duration}]{delay,  }\item[{F \&\&}]{function,  }\item[{Args \&\&...}]{args }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [inline]}}
+
+Add a new task to the scheduler. 
+\begin{DoxyParams}{Parameters}
+{\em id} & The unique identity of the task. \\
+\hline
+{\em delay} & The delay to wait before executing the task. \\
+\hline
+{\em function} & The function to execute. \\
+\hline
+{\em args} & the parameters to pass to the function. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classTask_1_1Scheduler_ae8b5e676c81dc9ed81e5ff0e03830d5f}\label{classTask_1_1Scheduler_ae8b5e676c81dc9ed81e5ff0e03830d5f}} 
+\index{Task\+::\+Scheduler@{Task\+::\+Scheduler}!stop@{stop}}
+\index{stop@{stop}!Task\+::\+Scheduler@{Task\+::\+Scheduler}}
+\subsubsection{\texorpdfstring{stop()}{stop()}}
+{\footnotesize\ttfamily std\+::future$<$void$>$ Task\+::\+Scheduler\+::stop (\begin{DoxyParamCaption}\item[{bool}]{discard = {\ttfamily false} }\end{DoxyParamCaption})}
+
+Synchronize and stop the task scheduler. 
+\begin{DoxyParams}{Parameters}
+{\em discard} & {\ttfamily true} Discard the tasks scheduled for the future. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A future that signals when the scheduler can be destroyed. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/\+Task\+Manager/Scheduler.\+hpp\end{DoxyCompactItemize}

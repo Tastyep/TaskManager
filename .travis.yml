@@ -1,0 +1,61 @@
+# This file configures the build and run environment on https://travis-ci.org/
+
+# Specify the operating systems on which to test for.
+os:
+  - linux
+
+# For details on building a C++ project see: https://docs.travis-ci.com/user/languages/cpp/
+sudo: required
+dist: trusty
+language: cpp
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - COMPILER=g++-6 C_COMPILER=gcc-6 STEP=gcc
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-6.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-6.0
+      env:
+        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 STEP=clang
+    - compiler: clang-tidy
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-6.0
+          packages:
+            - clang-tidy-6.0
+            - clang-6.0
+      env:
+        - COMPILER=clang++-6.0 C_COMPILER=clang-6.0 STEP=clang-tidy
+
+install:
+  - export "SOURCE_ROOT=${TRAVIS_BUILD_DIR}" "BUILD_ROOT=${TRAVIS_BUILD_DIR}/build"
+  - export "CXX=$COMPILER";
+
+before_script:
+  - mkdir -p ${BUILD_ROOT} && cd ${BUILD_ROOT}
+
+script:
+  - if [[ "$STEP" == "clang" ]]; then
+        (../configure.sh -c -t && make -j8 && ./TaskManager-tester);
+    fi
+  - if [[ "$STEP" == "gcc" ]]; then
+      (../configure.sh -t && make -j8 && ./TaskManager-tester);
+    fi
+  - if [[ "$STEP" == "clang-tidy" ]]; then
+      (../configure.sh -c -y && make -j8 && make clang-tidy);
+    fi

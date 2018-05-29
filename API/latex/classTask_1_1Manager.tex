@@ -1,0 +1,70 @@
+\hypertarget{classTask_1_1Manager}{}\section{Task\+:\+:Manager Class Reference}
+\label{classTask_1_1Manager}\index{Task\+::\+Manager@{Task\+::\+Manager}}
+
+
+The task manager.  
+
+
+
+
+{\ttfamily \#include $<$Manager.\+hpp$>$}
+
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classTask_1_1Manager_a8b898d35918fd236dda424988b78d549}{Manager} (std\+::shared\+\_\+ptr$<$ \hyperlink{classTask_1_1Detail_1_1Threadpool}{Detail\+::\+Threadpool} $>$ threadpool, size\+\_\+t max\+Workers)
+\item 
+std\+::future$<$ void $>$ \hyperlink{classTask_1_1Manager_adc748804a61954b13a3baab6c81331f3}{stop} ()
+\item 
+{\footnotesize template$<$class F , class... Args$>$ }\\auto \hyperlink{classTask_1_1Manager_a07c1fcc7d584edfab6407df34bcef8f9}{push} (F \&\&function, Args \&\&... args) -\/$>$ std\+::future$<$ typename std\+::result\+\_\+of$<$ F(Args...)$>$\+::type $>$
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+The task manager. 
+
+\subsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classTask_1_1Manager_a8b898d35918fd236dda424988b78d549}\label{classTask_1_1Manager_a8b898d35918fd236dda424988b78d549}} 
+\index{Task\+::\+Manager@{Task\+::\+Manager}!Manager@{Manager}}
+\index{Manager@{Manager}!Task\+::\+Manager@{Task\+::\+Manager}}
+\subsubsection{\texorpdfstring{Manager()}{Manager()}}
+{\footnotesize\ttfamily Task\+::\+Manager\+::\+Manager (\begin{DoxyParamCaption}\item[{std\+::shared\+\_\+ptr$<$ \hyperlink{classTask_1_1Detail_1_1Threadpool}{Detail\+::\+Threadpool} $>$}]{threadpool,  }\item[{size\+\_\+t}]{max\+Workers }\end{DoxyParamCaption})}
+
+Task manager constructor. 
+\begin{DoxyParams}{Parameters}
+{\em threadpool} & The threadpool owning the workers. \\
+\hline
+{\em max\+Workers} & The maximum number of parallel executions. \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\mbox{\Hypertarget{classTask_1_1Manager_a07c1fcc7d584edfab6407df34bcef8f9}\label{classTask_1_1Manager_a07c1fcc7d584edfab6407df34bcef8f9}} 
+\index{Task\+::\+Manager@{Task\+::\+Manager}!push@{push}}
+\index{push@{push}!Task\+::\+Manager@{Task\+::\+Manager}}
+\subsubsection{\texorpdfstring{push()}{push()}}
+{\footnotesize\ttfamily template$<$class F , class... Args$>$ \\
+auto Task\+::\+Manager\+::push (\begin{DoxyParamCaption}\item[{F \&\&}]{function,  }\item[{Args \&\&...}]{args }\end{DoxyParamCaption}) -\/$>$ std\+::future$<$typename std\+::result\+\_\+of$<$F(Args...)$>$\+::type$>$ \hspace{0.3cm}{\ttfamily [inline]}}
+
+Add a new task to the manager. 
+\begin{DoxyParams}{Parameters}
+{\em function} & The function to execute. \\
+\hline
+{\em args} & the parameters to pass to the function. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classTask_1_1Manager_adc748804a61954b13a3baab6c81331f3}\label{classTask_1_1Manager_adc748804a61954b13a3baab6c81331f3}} 
+\index{Task\+::\+Manager@{Task\+::\+Manager}!stop@{stop}}
+\index{stop@{stop}!Task\+::\+Manager@{Task\+::\+Manager}}
+\subsubsection{\texorpdfstring{stop()}{stop()}}
+{\footnotesize\ttfamily std\+::future$<$void$>$ Task\+::\+Manager\+::stop (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+Synchronize and stop the task manager. \begin{DoxyReturn}{Returns}
+A future that signals when the manager can be destroyed. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/\+Task\+Manager/Manager.\+hpp\end{DoxyCompactItemize}
