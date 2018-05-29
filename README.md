@@ -16,6 +16,13 @@ A compiler supporting the C++14 features.
 ###### Interface
 * The library exposes a module with free functions for creating managers and schedulers.
 
+### Documentation
+Online documentation can be found [here](https://tastyep.github.io/TaskManager/API/html/index.html).
+
+The documentation is generated using [Doxygen](https://www.stack.nl/~dimitri/doxygen/) which means it can also be found in the source code.
+
+Note: Files located in the detail/ directories are left undocumented as they are not exposed and only used internally.
+
 ### Basic Usage
 ###### Manager
 
