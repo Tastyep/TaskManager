@@ -31,7 +31,7 @@ TEST_F(SchedulerTest, scheduleMultipleUnOrderedSequentially) {
   this->setup(1, 1);
   for (size_t i = 10; i > 0; --i) {
     this->addTasks({
-      { [&n, i] { n = i; }, std::chrono::microseconds(i) },
+      { [&n, i] { n = i; }, std::chrono::microseconds(9-i) },
     });
   }
   this->runTasks();
